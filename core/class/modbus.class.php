@@ -274,7 +274,7 @@ class modbus extends eqLogic {
          $cmd->setSubType('other');
          $cmd->setEqLogic_id($this->getId());
          $cmd->save();
-       $cmd = $this->getCmd(null, 'writeCoils');
+      /* $cmd = $this->getCmd(null, 'writeCoils');
         if (!is_object($cmd)) {
             $cmd = new modbusCmd();
             $cmd->setLogicalId('writeCoils');
@@ -300,7 +300,7 @@ class modbus extends eqLogic {
           $cmd->setDisplay('title_placeholder', __('Registres ( séparés par - )', __FILE__));
           $cmd->setDisplay('message_placeholder', __('Values ( séparées par - ) ', __FILE__));
           $cmd->setEqLogic_id($this->getId());
-          $cmd->save();
+          $cmd->save();*/
 
     }
 
@@ -311,7 +311,15 @@ class modbus extends eqLogic {
 
  // Fonction exécutée automatiquement après la sauvegarde (création ou mise à jour) de l'équipement
     public function postSave() {
-       $this->configsCmds();
+       /*$this->configsCmds();*/
+       modbus::testC(231.2);
+
+      }
+      public static function testC($f){
+
+             $ar = unpack("c*", pack("f", $f));
+             log::add(__CLASS__, 'debug', 'TESTCONVERSE :' . json_encode($ar));
+
       }
 
 
@@ -511,9 +519,14 @@ class modbusCmd extends cmd {
           $eqLogic = $this->getEqLogic();
           $cmdlogical = $this->getLogicalId();
           $ipDevice = $eqLogic->getConfiguration('ipuser', 'modbus');
-          $adresseCmd =  $this->getConfiguration('adresseIO');
-          $choiceIO =  $this->getConfiguration('choiceIO');
 
+          $cmdsOptions= array('nameCmd' => $this->getName(),
+                                'cmdId' => $this->getId(),
+                                'typeIO' => $this->getConfiguration('choiceIO'),
+                                'functioncode' => $this->getConfiguration('choicefunctioncode'),
+                                'nbregister' => $this->getConfiguration('nbbytes'),
+                                'startregister' => $this->getConfiguration('startregister'),
+                               );
           if($cmdlogical == 'refresh'){
               /*  modbus::readCmds($eqLogic);*/
                 $eqLogic->configsCmds();
@@ -521,9 +534,28 @@ class modbusCmd extends cmd {
 
 
           if($this->getSubtype() == 'slider'){
-            $valSlider =  $_options['slider'];
+               $cmdsOptions['value']= $_options['slider'];
+               $value = json_encode(array('apikey' => jeedom::getApiKey('modbus'), 'ipDevice' => $ipDevice, 'action' => 'writeAction', 'options' => $cmdsOptions));
+               log::add('modbus', 'debug', 'WRITETEST : ' .$value);
+               modbus::socketConnection($value);
 
           }
+
+
+          if($this->getSubtype() == 'other'){
+
+            $cmdsOptions['value']= $this->getConfiguration('valeurToAction');
+             $value = json_encode(array('apikey' => jeedom::getApiKey('modbus'), 'ipDevice' => $ipDevice, 'action' => 'writeAction', 'options' => $cmdsOptions));
+             log::add('modbus', 'debug', 'WRITETEST : ' .$value);
+             modbus::socketConnection($value);
+
+          }
+
+
+
+
+
+
          if($this->getSubtype() == 'message'){
              $arrayVal = explode('-', $_options['message']);
              $trimValues = array_map('trim', $arrayVal);

@@ -59,6 +59,11 @@ function addCmdToTable(_cmd) {
    tr += '<span class="type" type="' + init(_cmd.type) + '">' + jeedom.cmd.availableType() + '</span>';
    tr += '<span class="subType" subType="' + init(_cmd.subType) + '"></span>';
    tr += '</td>';
+   tr += '<td style="min-width:150px;width:350px;">';
+    tr += '<input class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="minValue" placeholder="{{Min.}}" title="{{Min.}}" style="width:30%;display:inline-block;"/> ';
+    tr += '<input class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="maxValue" placeholder="{{Max.}}" title="{{Max.}}" style="width:30%;display:inline-block;"/> ';
+    tr += '<input class="cmdAttr form-control input-sm" data-l1key="unite" placeholder="{{Unité}}" title="{{Unité}}" style="width:30%;display:inline-block;"/>';
+    tr += '</td>';
 
    tr += '<td>';
    tr += '<select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="choiceIO" id="choiceIO" style="margin-top : 5px;" title="{{Choisir Type}}">';
@@ -87,6 +92,7 @@ function addCmdToTable(_cmd) {
    tr += '<option value="fc15" id="fc15">{{Fc15 Write Multiple Coils}}</option>';
    tr += '<option value="fc16" id="fc16">{{Fc16 Write Multiple Registers}}</option>';
     tr += '</select>';
+   tr += '<input class="cmdAttr form-control tooltips input-sm" data-l1key="configuration" data-l2key="valeurToAction" placeholder="{{Valeur à envoyer pour WriteCoil (0 ou 1)}}" style="width:100%"/>';
    tr += '</td>';
    tr += '<td style="min-width:80px;width:350px;">';
    tr += '<label class="checkbox-inline"><input type="checkbox" class="cmdAttr" data-l1key="isVisible" checked/>{{Afficher}}</label>';

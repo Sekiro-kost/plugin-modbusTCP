@@ -71,6 +71,16 @@ def testWrite(ipDevice, typeInput, values, nbByte, startRegister):
     client.close()
 
 
+def writeFunction(ipDevice, options):
+    client = ModbusTcpClient(ipDevice)
+    if options['typeIO'] == 'coils':
+        if int(options['value']) == 0:
+            client.write_coil(int(options['startregister'])-1, False)
+        elif int(options['value']) == 1:
+            client.write_coil(int(options['startregister'])-1, True)
+    elif options['typeIO'] == 'holdingRegisters':
+        client.write_register(int(options['startregister'])-1, int(options['value']))
+
 def testAllCmds(ipDevice, registerParams):
 	client = ModbusTcpClient(ipDevice)
 	results = {}
@@ -85,8 +95,6 @@ def testAllCmds(ipDevice, registerParams):
 	        if x['functioncode'] == 'fc01':
 	            logging.debug("TRAITEMENT COMMANDE : " + x['nameCmd'])
 	            result = client.read_coils(int(x['startregister']) - 1, int(x['nbregister']))
-	            #results['coils'] = {}
-	            #results['coils'][x['nameCmd']] = []
 	            results['coils'][x['nameCmd']] = []
 	            for Byte in y:
 	                parsedByte = result.bits[Byte]
@@ -111,17 +119,12 @@ def testAllCmds(ipDevice, registerParams):
 	                logging.debug(result.registers[int(Byte)])
 	                value = result.registers[int(Byte)]
 	                hexValue += hex(value)[2:]
-	                #parsedHex = hex(result.registers[Byte])
-	                #arrayBits = {'StartRegister': int(x['startregister']),'Byte': Byte, 'valueHex' : parsedHex, 'CmdId' : x['cmdId'], 'formatForConversion' :x['format']}
-	                #results['inputRegisters'][x['nameCmd']].append(arrayBits)
-	                #logging.debug(results)
 	            if x['format'] == 'floatformat':
 	                logging.debug('coucou')
 	                logging.debug(hexValue)
 	                floatValue = struct.unpack('!f', bytes.fromhex(hexValue))[0]
 	                arrayBits = {'StartRegister': int(x['startregister']),'Byte': Byte, 'valueConverse' : floatValue, 'CmdId' : x['cmdId']}
 	                results['inputRegisters'][x['nameCmd']].append(arrayBits)
-	            #return results
 	        else :
 	            logging.debug("ERREUR FUNCTION CODE DE LA COMMMANDE : " + x['nameCmd'] + " >>  MAUVAIS CODE FONCTION SELECTIONNE, LECTEUR SEULE PERMISE")
 	    elif x['typeIO'] == 'holdingRegisters':
@@ -157,8 +160,9 @@ def read_socket():
 			    ret = testRead(message['eqlogicid'], message['cmdId'], message['ipDevice'], message['typeOfCmd'], message['nbByte'],message['adresse'])
 			    logging.debug("MESSAGE ENVOYE ACTION READ")
 			    jeedom_com.send_change_immediate(ret)
-			elif message['action'] == 'write':
-			    testWrite(message['ipDevice'], message['typeOfCmd'],message['values'], message['registers'], message['startRegister'])
+			elif message['action'] == 'writeAction':
+			    #testWrite(message['ipDevice'], message['typeOfCmd'],message['values'], message['registers'], message['startRegister'])
+			    writeFunction(message['ipDevice'], message['options'])
 			    logging.debug("MESSAGE ENVOYE ACTION WRITE")
 			elif message['action'] == 'readCron':
 			    ret = testReadCron(message['eqlogicid'], message['data'], message['ipDevice'])
