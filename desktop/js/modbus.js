@@ -66,6 +66,7 @@ function addCmdToTable(_cmd) {
     tr += '</td>';
 
    tr += '<td>';
+   tr += '<label class="checkbox-inline"><input type="checkbox" class="cmdAttr" data-l1key="configuration" data-l2key="decimal">{{Decimale}}</label>';
    tr += '<select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="choiceIO" id="choiceIO" style="margin-top : 5px;" title="{{Choisir Type}}">';
    tr += '<option value="discrete">{{Discrete Inputs}}</option>';
    tr += '<option value="coils">{{Coils}}</option>';

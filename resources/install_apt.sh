@@ -23,6 +23,10 @@ echo 30 > ${PROGRESS_FILE}
 sudo apt-get install -y python3-pyudev python3-serial python3-requests
 echo 50 > ${PROGRESS_FILE}
 sudo apt-get install -y python3-pymodbus
+echo 70 > ${PROGRESS_FILE}
+sudo apt-get install -y python3-bitstring
+echo 80 > ${PROGRESS_FILE}
+sudo pip3 install -U minimalmodbus
 echo 100 > ${PROGRESS_FILE}
 echo "********************************************************"
 echo "*             Installation terminée                    *"

@@ -14,6 +14,7 @@
 # along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import bitstring
 import string
 import sys
 import os
@@ -26,6 +27,7 @@ import argparse
 from os.path import join
 import json
 import pymodbus
+from codecs import decode
 from pymodbus.client.sync import ModbusTcpClient
 from pymodbus.client.sync import ModbusSerialClient as ModbusClient
 from pymodbus.constants import Defaults
@@ -79,7 +81,76 @@ def writeFunction(ipDevice, options):
         elif int(options['value']) == 1:
             client.write_coil(int(options['startregister'])-1, True)
     elif options['typeIO'] == 'holdingRegisters':
-        client.write_register(int(options['startregister'])-1, int(options['value']))
+        logging.debug('etape1')
+        if options['format'] == 'floatformat':
+            logging.debug('etape2')
+            arrayValuesForRegisters = floatToRegisters(231.2)
+            logging.debug(arrayValuesForRegisters)
+            client.write_registers(int(options['startregister'])-1, ( int(arrayValuesForRegisters[0]),int(arrayValuesForRegisters[1]) ) )
+            #client.write_register(int(options['startregister'])-1, int(options['value']))
+        elif options['format'] == 'longformat':
+            logging.debug('else')
+            #client.write_register(int(options['startregister'])-1, int(options['value']))
+        elif options['format'] == 'ascii':
+            logging.debug('else')
+            #client.write_registers(int(options['startregister'])-1, arrayValuesForRegisters*2)
+        else:
+            logging.debug('else')
+
+
+def testreadholding(ipDevice):
+    client = ModbusTcpClient(ipDevice)
+    client.read_holding_registers(0, 2, unit=1)
+    registers = raw_values.registers
+    decoder = BinaryPayloadDecoder.fromRegisters(registers, wordorder=Endian.Big, byteorder=Endian.Big)
+    decoder = BinaryPayloadDecoder.fromRegisters(registers, wordorder=Endian.Big, byteorder=Endian.Big)
+    for _ in range(5):
+        logging.debug(decoder.decode_32bit_float())
+
+
+def floatToRegisters(floatVal):
+    #logging.debug(''.join('{:0>8b}'.format(c) for c in struct.pack('!f', num)))
+    #f1 = bitstring.BitArray(float=231.2, length=32)
+    f1 = bitstring.BitArray(float=float(floatVal), length=32)
+    #f2 = bitstring.BitArray(float=231, length=64)
+    logging.debug(f1.bin)
+    bstr = str(f1.bin).replace(' ', '')
+    hexa = '%0*X' % ((len(bstr) + 3) // 4, int(bstr, 2))
+    logging.debug(hexa)
+    # on coupe par le nb d'octet
+    hexastr = str(hexa)
+    test = re.findall("(\w{4})", hexastr)
+    finalForRegister = int(str(test[0]), 16)
+    finalForRegister2 = int(str(test[1]), 16)
+    logging.debug(finalForRegister)
+    logging.debug(finalForRegister2)
+    return test
+    #[d] = struct.unpack(">Q", struct.pack(">d", 231))
+    #logging.debug('{:064b}'.format(d))
+    #bf = intTobyte(int(glo, 2), 8)
+    #logging.debug(struct.unpack('>d', bf)[0])
+    #logging.debug(f1.bin)
+    #logging.debug(f2.bin)
+    #logging.debug('testbinary')
+
+def conversionForRegisters(value, nbRegisters, formatConverse):
+    lenWord = 16*int(nbRegisters)
+    if formatConverse == 'floatformat':
+        f1 = bitstring.BitArray(float=float(value), length=lenWord)
+    elif formatConverse == 'longformat':
+        f1 = bitstring.BitArray(int=float(value), length=lenWord)
+    elif formatConverse == 'ascii':
+    elif formatConverse == floatformat:
+    else:
+    bstr = str(f1.bin).replace(' ', '')
+    hexa = '%0*X' % ((len(bstr) + 3) // 4, int(bstr, 2))
+    hexastr = str(hexa)
+    logging.debug(hexastr)
+
+
+def intTobyte(n, length):
+    logging.debug(decode('%%0%dx' % (length << 1) % n, 'hex')[-length:])
+
 
 def testAllCmds(ipDevice, registerParams):
 	client = ModbusTcpClient(ipDevice)
@@ -87,6 +158,7 @@ def testAllCmds(ipDevice, registerParams):
 	results['FUNC'] = 'allCmds'
 	results['ipdevice'] = ipDevice
 	results['coils'] = {}
+	results['inputRegisters'] = {}
 	for x in registerParams:
 	    x['dataResult'] = {}
 	    y = range(int(x['nbregister']))
@@ -105,14 +177,13 @@ def testAllCmds(ipDevice, registerParams):
 	                    valTransf = 0
 	                arrayBits = {'StartRegister': int(x['startregister']), 'Byte': Byte, 'valueConverse' : valTransf, 'CmdId' : x['cmdId'], 'formatForConversion' :x['format']}
 	                results['coils'][x['nameCmd']].append(arrayBits)
-	                logging.debug('plop')
 	        elif x['functioncode'] != 'fc05' or x['functioncode'] != 'fc15' or x['functioncode'] != 'fc01':
 	            logging.debug("ERREUR FUNCTION CODE DE LA COMMMANDE : " + x['nameCmd'] + " >>  MAUVAIS CODE FONCTION SELECTIONNE, LECTEUR SEULE PERMISE")
 	    elif x['typeIO'] == 'inputRegisters':
 	        if x['functioncode'] == 'fc04':
 	            logging.debug("TRAITEMENT COMMANDE : " + x['nameCmd'])
 	            result = client.read_input_registers(int(x['startregister'] ) -1, int(x['nbregister']))
-	            results['inputRegisters'] = {}
+	            #results['inputRegisters'] = {}
 	            results['inputRegisters'][x['nameCmd']] = []
 	            hexValue = ''
 	            for Byte in y:
@@ -120,10 +191,14 @@ def testAllCmds(ipDevice, registerParams):
 	                value = result.registers[int(Byte)]
 	                hexValue += hex(value)[2:]
 	            if x['format'] == 'floatformat':
-	                logging.debug('coucou')
 	                logging.debug(hexValue)
 	                floatValue = struct.unpack('!f', bytes.fromhex(hexValue))[0]
 	                arrayBits = {'StartRegister': int(x['startregister']),'Byte': Byte, 'valueConverse' : floatValue, 'CmdId' : x['cmdId']}
+	                results['inputRegisters'][x['nameCmd']].append(arrayBits)
+	            if x['format'] == 'longformat':
+	                logging.debug('longformat')
+	                plop = int(hexValue, 16)
+	                arrayBits = {'StartRegister': int(x['startregister']),'Byte': Byte, 'valueConverse' : plop, 'CmdId' : x['cmdId']}
 	                results['inputRegisters'][x['nameCmd']].append(arrayBits)
 	        else :
 	            logging.debug("ERREUR FUNCTION CODE DE LA COMMMANDE : " + x['nameCmd'] + " >>  MAUVAIS CODE FONCTION SELECTIONNE, LECTEUR SEULE PERMISE")
@@ -161,6 +236,7 @@ def read_socket():
 			    logging.debug("MESSAGE ENVOYE ACTION READ")
 			    jeedom_com.send_change_immediate(ret)
 			elif message['action'] == 'writeAction':
+			    conversionForRegisters(value, nbRegisters, formatConverse)
 			    #testWrite(message['ipDevice'], message['typeOfCmd'],message['values'], message['registers'], message['startRegister'])
 			    writeFunction(message['ipDevice'], message['options'])
 			    logging.debug("MESSAGE ENVOYE ACTION WRITE")
@@ -173,7 +249,10 @@ def read_socket():
 			elif message['action'] == 'newCmds':
 			    ret = testAllCmds(message['modbusDevice']['ipDevice'], message['modbusDevice']['registerParams'])
 			    jeedom_com.send_change_immediate(ret)
-			#logging.debug(ret)
+			elif message['action'] == 'test':
+			    ret = floatToRegisters(message['num'])
+			    #jeedom_com.send_change_immediate(ret)
+			#conversionForRegisters(value, nbRegisters, formatConverse):
 			#jeedom_com.send_change_immediate(ret)
 		except Exception as e:
 			logging.error('Send command to demon error : '+str(e))

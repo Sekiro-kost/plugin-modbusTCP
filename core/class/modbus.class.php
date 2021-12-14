@@ -311,10 +311,20 @@ class modbus extends eqLogic {
 
  // Fonction exécutée automatiquement après la sauvegarde (création ou mise à jour) de l'équipement
     public function postSave() {
-       /*$this->configsCmds();*/
-       modbus::testC(231.2);
+      /* $this->configsCmds();*/
+      /* modbus::testC(231.2);*/
+
+        $ipDevice = $this->getConfiguration('ipuser', 'modbus');
+        $value = array('apikey' => jeedom::getApiKey('modbus'), 'action' => 'test', 'num' => 231);
+        $value = json_encode($value);
+        self::socketConnection($value);
+
+
+
+
 
       }
+
       public static function testC($f){
 
              $ar = unpack("c*", pack("f", $f));
@@ -398,10 +408,12 @@ class modbus extends eqLogic {
         foreach($result as $key => $value){
              if($key == 'inputRegisters'){
                    foreach($value as $k => $v){
-                          $valueToEvent = $v['valueConverse'];
-                          $cmdId = $v['CmdId'];
+                          $valueToEvent = $v[0]['valueConverse'];
+                          $cmdId = intval($v[0]['CmdId']);
+                           log::add(__CLASS__, 'debug', 'iCMDID: ' . $cmdId);
                           $cmdsearch = cmd::byId($cmdId);
                           if(is_object($cmdsearch)){
+                               $nameC = $cmdsearch->getName();
                                $cmdsearch->event($valueToEvent);
                           }
                    }
@@ -409,7 +421,6 @@ class modbus extends eqLogic {
                   foreach($value as $cmdName => $data){
                         log::add(__CLASS__, 'debug', 'cmdname: ' . json_encode($cmdName));
                         log::add(__CLASS__, 'debug', 'data: ' . json_encode($data));
-                      /*  $i = 0;*/
                         $cmdOrigin = cmd::byId($data[0]['CmdId']);
                         $cmdOriginName = $cmdOrigin->getName();
                         $eqlogic = $cmdOrigin->getEqLogic();
@@ -526,6 +537,7 @@ class modbusCmd extends cmd {
                                 'functioncode' => $this->getConfiguration('choicefunctioncode'),
                                 'nbregister' => $this->getConfiguration('nbbytes'),
                                 'startregister' => $this->getConfiguration('startregister'),
+                                'format' => $this->getConfiguration('formatIO')
                                );
           if($cmdlogical == 'refresh'){
               /*  modbus::readCmds($eqLogic);*/
@@ -534,6 +546,13 @@ class modbusCmd extends cmd {
 
 
           if($this->getSubtype() == 'slider'){
+               if($this->getConfiguration('decimal', 0) == 1){
+                 log::add('modbus', 'debug', 'IHIHIHIHIH : ');
+                 $arr = $this->getDisplay('parameters');
+                 $arr['step'] = 0.1;
+                 $this->setDisplay(parameters, $arr);
+                 $this->save();
+               }
                $cmdsOptions['value']= $_options['slider'];
                $value = json_encode(array('apikey' => jeedom::getApiKey('modbus'), 'ipDevice' => $ipDevice, 'action' => 'writeAction', 'options' => $cmdsOptions));
                log::add('modbus', 'debug', 'WRITETEST : ' .$value);
