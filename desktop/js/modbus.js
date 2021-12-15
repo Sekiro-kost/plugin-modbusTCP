@@ -80,6 +80,16 @@ function addCmdToTable(_cmd) {
    tr += '<option value="longformat">{{LongInteger}}</option>';
    tr += '<option value="floatformat">{{Float (Real4)}}</option>';
    tr += '</select>';
+   tr += '<select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="wordorder" style="margin-top : 5px;">';
+   tr += '<option value="" selected>{{== Word Order ==}}</option>';
+   tr += '<option value="littleword">{{Little First}}</option>';
+   tr += '<option value="bigword">{{Big First}}</option>';
+   tr += '</select>';
+   tr += '<select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="byteorder" style="margin-top : 5px;">';
+   tr += '<option value="" selected>{{== Byte Order ==}}</option>';
+   tr += '<option value="littlebyte">{{Little First}}</option>';
+   tr += '<option value="bigbyte">{{Big First}}</option>';
+   tr += '</select>';
    tr += '<input class="cmdAttr form-control tooltips input-sm" data-l1key="configuration" data-l2key="startregister" placeholder="{{Registre départ}}" style="width:100%;"/>';
    tr += '<input class="cmdAttr form-control tooltips input-sm" data-l1key="configuration" data-l2key="nbbytes" placeholder="{{Nb de bytes}}" style="width:100%"/>';
    tr += '<select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="choicefunctioncode" id="choicefunctioncode" style="margin-top : 5px;">';

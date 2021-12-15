@@ -311,13 +311,13 @@ class modbus extends eqLogic {
 
  // Fonction exécutée automatiquement après la sauvegarde (création ou mise à jour) de l'équipement
     public function postSave() {
-      /* $this->configsCmds();*/
+       $this->configsCmds();
       /* modbus::testC(231.2);*/
 
-        $ipDevice = $this->getConfiguration('ipuser', 'modbus');
+      /*  $ipDevice = $this->getConfiguration('ipuser', 'modbus');
         $value = array('apikey' => jeedom::getApiKey('modbus'), 'action' => 'payload');
         $value = json_encode($value);
-        self::socketConnection($value);
+        self::socketConnection($value);*/
 
 
 
@@ -345,7 +345,9 @@ class modbus extends eqLogic {
                                     'format' => $cmd->getConfiguration('formatIO'),
                                     'functioncode' => $cmd->getConfiguration('choicefunctioncode'),
                                     'nbregister' => $cmd->getConfiguration('nbbytes'),
-                                    'startregister' => $cmd->getConfiguration('startregister')
+                                    'startregister' => $cmd->getConfiguration('startregister'),
+                                    'wordorder' => $cmd->getConfiguration('wordorder'),
+                                    'byteorder' => $cmd->getConfiguration('byteorder')
                                    );
         }
 
