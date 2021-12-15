@@ -33,6 +33,10 @@ from pymodbus.client.sync import ModbusSerialClient as ModbusClient
 from pymodbus.constants import Defaults
 from pymodbus.exceptions import *
 from pymodbus.utilities import hexlify_packets, ModbusTransactionState
+from pymodbus.payload import BinaryPayloadBuilder
+from pymodbus.payload import BinaryPayloadDecoder
+from pymodbus.constants import Endian
+from pymodbus.compat import iteritems
 #from struct import *
 import struct
 
@@ -107,6 +111,46 @@ def testreadholding(ipDevice):
     for _ in range(5):
         logging.debug(decoder.decode_32bit_float())
 
+def constructpayload():
+    client = ModbusTcpClient('10.1.14.54')
+    builder = BinaryPayloadBuilder()
+    builder.add_32bit_float(231.2)
+    payload = builder.build()
+    logging.debug(payload)
+    registers = builder.to_registers()
+    rr = client.write_registers(6, registers, unit=1)
+    decodepayload(payload, registers)
+
+def decodepayload(payload, registers):
+    client = ModbusTcpClient('10.1.14.54')
+    decoder = BinaryPayloadDecoder(payload)
+    result = decoder.decode_32bit_float()
+    logging.debug(result)
+
+def testDecode():
+    client = ModbusTcpClient('10.1.14.54')
+    builder = BinaryPayloadBuilder(byteorder=Endian.Little, wordorder=Endian.Big)
+    builder.add_32bit_float(231.2)
+    builder.add_bits([0, 1, 0, 1, 1, 0, 1, 0])
+    payload = builder.build()
+    client.write_registers(11, payload, skip_encode=True, unit=1)
+    count = len(payload)
+    result = client.read_holding_registers(11, count,  unit=1)
+    logging.debug("-" * 20)
+    logging.debug(" REGISTERS ")
+    logging.debug("-" * 20)
+    logging.debug(result.registers)
+    decoder = BinaryPayloadDecoder.fromRegisters(result.registers,byteorder=Endian.Little,wordorder=Endian.Big)
+    decoded = {'float': decoder.decode_32bit_float(),'bits': decoder.decode_bits()}
+    logging.debug("-" * 20)
+    logging.debug("Decoded Data")
+    logging.debug("-" * 20)
+    for name, value in iteritems(decoded):
+        logging.debug(str(name))
+        logging.debug(str(value))
+    client.close()
+
+
 
 def floatToRegisters(floatVal):
     #logging.debug(''.join('{:0>8b}'.format(c) for c in struct.pack('!f', num)))
@@ -140,12 +184,12 @@ def conversionForRegisters(value, nbRegisters, formatConverse):
     elif formatConverse == 'longformat':
         f1 = bitstring.BitArray(int=float(value), length=lenWord)
     elif formatConverse == 'ascii':
-    elif formatConverse == floatformat:
-    else:
-    bstr = str(f1.bin).replace(' ', '')
-    hexa = '%0*X' % ((len(bstr) + 3) // 4, int(bstr, 2))
-    hexastr = str(hexa)
-    logging.debug(hexastr)
+    #else:
+        f1 = bitstring.BitArray(int=float(value), length=lenWord)
+        #bstr = str(f1.bin).replace(' ', '')
+        #hexa = '%0*X' % ((len(bstr) + 3) // 4, int(bstr, 2))
+        #hexastr = str(hexa)
+        #logging.debug(hexastr)
 
 
 def intTobyte(n, length):
@@ -251,6 +295,8 @@ def read_socket():
 			    jeedom_com.send_change_immediate(ret)
 			elif message['action'] == 'test':
 			    ret = floatToRegisters(message['num'])
+			elif message['action'] == 'payload':
+			    ret = testDecode()
 			    #jeedom_com.send_change_immediate(ret)
 			#conversionForRegisters(value, nbRegisters, formatConverse):
 			#jeedom_com.send_change_immediate(ret)

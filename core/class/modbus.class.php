@@ -315,7 +315,7 @@ class modbus extends eqLogic {
       /* modbus::testC(231.2);*/
 
         $ipDevice = $this->getConfiguration('ipuser', 'modbus');
-        $value = array('apikey' => jeedom::getApiKey('modbus'), 'action' => 'test', 'num' => 231);
+        $value = array('apikey' => jeedom::getApiKey('modbus'), 'action' => 'payload');
         $value = json_encode($value);
         self::socketConnection($value);
 
