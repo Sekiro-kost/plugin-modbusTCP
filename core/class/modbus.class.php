@@ -274,33 +274,6 @@ class modbus extends eqLogic {
          $cmd->setSubType('other');
          $cmd->setEqLogic_id($this->getId());
          $cmd->save();
-      /* $cmd = $this->getCmd(null, 'writeCoils');
-        if (!is_object($cmd)) {
-            $cmd = new modbusCmd();
-            $cmd->setLogicalId('writeCoils');
-            $cmd->setIsVisible(1);
-            $cmd->setName(__('WriteCoils', __FILE__));
-        }
-        $cmd->setType('action');
-        $cmd->setSubType('message');
-        $cmd->setDisplay('title_placeholder', __('Registres ( séparés par - )', __FILE__));
-        $cmd->setDisplay('message_placeholder', __('Values ( séparées par - )', __FILE__));
-        $cmd->setEqLogic_id($this->getId());
-        $cmd->save();
-
-        $cmd = $this->getCmd(null, 'writeHoldings');
-          if (!is_object($cmd)) {
-              $cmd = new modbusCmd();
-              $cmd->setLogicalId('writeHoldings');
-              $cmd->setIsVisible(1);
-              $cmd->setName(__('WriteHoldings', __FILE__));
-          }
-          $cmd->setType('action');
-          $cmd->setSubType('message');
-          $cmd->setDisplay('title_placeholder', __('Registres ( séparés par - )', __FILE__));
-          $cmd->setDisplay('message_placeholder', __('Values ( séparées par - ) ', __FILE__));
-          $cmd->setEqLogic_id($this->getId());
-          $cmd->save();*/
 
     }
 

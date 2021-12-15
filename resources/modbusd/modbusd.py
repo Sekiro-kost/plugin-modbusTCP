@@ -55,191 +55,57 @@ except ImportError:
 
 
 
-def testWrite(ipDevice, typeInput, values, nbByte, startRegister):
-    client = ModbusTcpClient(ipDevice)
-    if typeInput == 'coils':
-        if len(values) > 1:
-            stringValues = ','.join(values)
-            valueDef = list(eval(stringValues))
-            client.write_coils(int(startRegister)-1, valueDef)
-        elif len(values) == 1:
-            stringValues = ''.join(values)
-            testVal = eval(stringValues)
-            client.write_coil(int(startRegister)-1, testVal)
-    elif typeInput == 'holdings':
-        if len(values) > 1:
-            values = list(map(int, values))
-            client.write_registers(int(startRegister)-1, values)
-        elif len(values) == 1:
-            stringValue = ''.join(values)
-            intval = int(stringValue)
-            client.write_register(int(startRegister)-1, intval)
-    client.close()
-
-
-def writeFunction(ipDevice, options):
-    client = ModbusTcpClient(ipDevice)
-    if options['typeIO'] == 'coils':
-        if int(options['value']) == 0:
-            client.write_coil(int(options['startregister'])-1, False)
-        elif int(options['value']) == 1:
-            client.write_coil(int(options['startregister'])-1, True)
-    elif options['typeIO'] == 'holdingRegisters':
-        logging.debug('etape1')
-        if options['format'] == 'floatformat':
-            logging.debug('etape2')
-            arrayValuesForRegisters = floatToRegisters(231.2)
-            logging.debug(arrayValuesForRegisters)
-            client.write_registers(int(options['startregister'])-1, ( int(arrayValuesForRegisters[0]),int(arrayValuesForRegisters[1]) ) )
-            #client.write_register(int(options['startregister'])-1, int(options['value']))
-        elif options['format'] == 'longformat':
-            logging.debug('else')
-            #client.write_register(int(options['startregister'])-1, int(options['value']))
-        elif options['format'] == 'ascii':
-            logging.debug('else')
-            #client.write_registers(int(options['startregister'])-1, arrayValuesForRegisters*2)
-        else:
-            logging.debug('else')
-
-
-def testreadholding(ipDevice):
-    client = ModbusTcpClient(ipDevice)
-    client.read_holding_registers(0, 2, unit=1)
-    registers = raw_values.registers
-    decoder = BinaryPayloadDecoder.fromRegisters(registers, wordorder=Endian.Big, byteorder=Endian.Big)
-    decoder = BinaryPayloadDecoder.fromRegisters(registers, wordorder=Endian.Big, byteorder=Endian.Big)
-    for _ in range(5):
-        logging.debug(decoder.decode_32bit_float())
-
-def constructpayload():
-    client = ModbusTcpClient('10.1.14.54')
-    builder = BinaryPayloadBuilder()
-    builder.add_32bit_float(231.2)
-    payload = builder.build()
-    logging.debug(payload)
-    registers = builder.to_registers()
-    rr = client.write_registers(6, registers, unit=1)
-    decodepayload(payload, registers)
-
-def decodepayload(payload, registers):
-    client = ModbusTcpClient('10.1.14.54')
-    decoder = BinaryPayloadDecoder(payload)
-    result = decoder.decode_32bit_float()
-    logging.debug(result)
-
 def testDecode(ipdevice, action, registerParams):
-    client = ModbusTcpClient('10.1.14.54')
+    client = ModbusTcpClient('192.168.1.112')
     for x in registerParams:
-        formatToconverse = x['format']
-		#formatToconverse = x['format']
-		typebuilder = ''
-		logging.debug('test1')
-		if (x['wordorder'] == 'bigword') and (x['byteorder'] == 'bigbyte'):
-			builder = BinaryPayloadBuilder(byteorder=Endian.Big, wordorder=Endian.Big)
-			typebuilder = 'bgwb'
-		elif (x['wordorder'] == 'bigword') and (x['byteorder'] == 'littlebyte'):
-			builder = BinaryPayloadBuilder(byteorder=Endian.Little, wordorder=Endian.Big)
-			typebuilder = 'blwb'
-		elif (x['wordorder'] == 'littleword') and (x['byteorder'] == 'bigbyte'):
-			builder = BinaryPayloadBuilder(byteorder=Endian.Big, wordorder=Endian.Little)
-			typebuilder = 'bbwl'
-		elif (x['wordorder'] == 'littleword') and (x['byteorder'] == 'littlebyte'):
-			builder = BinaryPayloadBuilder(byteorder=Endian.Little, wordorder=Endian.Little)
-			typebuilder = 'blwl'
-			logging.debug('test2')
-		if formatToconverse == 'floatformat':
-			builder.add_32bit_float(float(x['value']))
-		elif formatToconverse == 'longformat':
-			builder.add_32bit_int(hex(x['value']))
-    #elif formatToconverse == 'floatformat':
-        #builder.add_32bit_float(float(registerParams['value']))
-    #elif formatToconverse == 'floatformat':
-        #builder.add__bits(registerParams['value'])
-		logging.debug('test3')
-		payload = builder.build()
-		count = len(payload)
-		if action == 'writeAction':
-			client.write_registers(int(x['startregister'])-1, payload, skip_encode=True, unit=1)
-		elif action == 'newCmds':
-			result = client.read_holding_registers(int(x['startregister'])-1, count,  unit=1)
-			logging.debug("-" * 20)
-			logging.debug(" REGISTERS ")
-			logging.debug("-" * 20)
-			logging.debug(result.registers)
-		if typebuilder == 'bgwb':
-			decoder = BinaryPayloadDecoder.fromRegisters(result.registers,byteorder=Endian.Big,wordorder=Endian.Big)
-		elif typebuilder == 'blwb':
-			decoder = BinaryPayloadDecoder.fromRegisters(result.registers,byteorder=Endian.Little,wordorder=Endian.Big)
-		elif typebuilder == 'bbwl':
-			decoder = BinaryPayloadDecoder.fromRegisters(result.registers,byteorder=Endian.Big,wordorder=Endian.Little)
-		elif typebuilder == 'blwl':
-            decoder = BinaryPayloadDecoder.fromRegisters(result.registers,byteorder=Endian.Little,wordorder=Endian.little)
-        if formatToconverse == 'floatformat':
-            decoded = {'float': decoder.decode_32bit_float()}
-        elif formatToconverse == 'longformat':
-            decoded = {'32ints': decoder.decode_32bit_int()}
-        logging.debug("-" * 20)
-        logging.debug("Decoded Data")
-        logging.debug("-" * 20)
-        for name, value in iteritems(decoded):
-            logging.debug(str(name))
-            logging.debug(str(value))
-    #builder.add_bits([0, 1, 0, 1, 1, 0, 1, 0])
-    #payload = builder.build()
-    #client.write_registers(11, payload, skip_encode=True, unit=1)
-    #count = len(payload)
-    #esult = client.read_holding_registers(11, count,  unit=1)
-    #decoder = BinaryPayloadDecoder.fromRegisters(result.registers,byteorder=Endian.Little,wordorder=Endian.Big)
-    #decoded = {'float': decoder.decode_32bit_float(),'bits': decoder.decode_bits()}
-    #logging.debug("-" * 20)
-    #logging.debug("Decoded Data")
-    #logging.debug("-" * 20)
-	client.close()
-
-
-
-def floatToRegisters(floatVal):
-    #logging.debug(''.join('{:0>8b}'.format(c) for c in struct.pack('!f', num)))
-    #f1 = bitstring.BitArray(float=231.2, length=32)
-    f1 = bitstring.BitArray(float=float(floatVal), length=32)
-    #f2 = bitstring.BitArray(float=231, length=64)
-    logging.debug(f1.bin)
-    bstr = str(f1.bin).replace(' ', '')
-    hexa = '%0*X' % ((len(bstr) + 3) // 4, int(bstr, 2))
-    logging.debug(hexa)
-    # on coupe par le nb d'octet
-    hexastr = str(hexa)
-    test = re.findall("(\w{4})", hexastr)
-    finalForRegister = int(str(test[0]), 16)
-    finalForRegister2 = int(str(test[1]), 16)
-    logging.debug(finalForRegister)
-    logging.debug(finalForRegister2)
-    return test
-    #[d] = struct.unpack(">Q", struct.pack(">d", 231))
-    #logging.debug('{:064b}'.format(d))
-    #bf = intTobyte(int(glo, 2), 8)
-    #logging.debug(struct.unpack('>d', bf)[0])
-    #logging.debug(f1.bin)
-    #logging.debug(f2.bin)
-    #logging.debug('testbinary')
-
-def conversionForRegisters(value, nbRegisters, formatConverse):
-    lenWord = 16*int(nbRegisters)
-    if formatConverse == 'floatformat':
-        f1 = bitstring.BitArray(float=float(value), length=lenWord)
-    elif formatConverse == 'longformat':
-        f1 = bitstring.BitArray(int=float(value), length=lenWord)
-    elif formatConverse == 'ascii':
-    #else:
-        f1 = bitstring.BitArray(int=float(value), length=lenWord)
-        #bstr = str(f1.bin).replace(' ', '')
-        #hexa = '%0*X' % ((len(bstr) + 3) // 4, int(bstr, 2))
-        #hexastr = str(hexa)
-        #logging.debug(hexastr)
-
-
-def intTobyte(n, length):
-    logging.debug(decode('%%0%dx' % (length << 1) % n, 'hex')[-length:])
+    	formatToconverse = x['format']
+    	typebuilder = ''
+    	builder = ''
+    	if (x['wordorder'] == 'bigword') and (x['byteorder'] == 'bigbyte'):
+    		builder = BinaryPayloadBuilder(byteorder=Endian.Big, wordorder=Endian.Big)
+    		typebuilder = 'bgwb'
+    	elif (x['wordorder'] == 'bigword') and (x['byteorder'] == 'littlebyte'):
+    		builder = BinaryPayloadBuilder(byteorder=Endian.Little, wordorder=Endian.Big)
+    		typebuilder = 'blwb'
+    	elif (x['wordorder'] == 'littleword') and (x['byteorder'] == 'bigbyte'):
+    		builder = BinaryPayloadBuilder(byteorder=Endian.Big, wordorder=Endian.Little)
+    		typebuilder = 'bbwl'
+    	elif (x['wordorder'] == 'littleword') and (x['byteorder'] == 'littlebyte'):
+    		builder = BinaryPayloadBuilder(byteorder=Endian.Little, wordorder=Endian.Little)
+    		typebuilder = 'blwl'
+    	count = x['nbregister']
+    	if action == 'writeAction':
+    	    if formatToconverse == 'floatformat':
+    	        builder.add_32bit_float(float(x['value']))
+    	    elif formatToconverse == 'longformat':
+    	        builder.add_32bit_int(hex(x['value']))
+    	    payload = builder.build()
+    	    client.write_registers(int(x['startregister'])-1, payload, skip_encode=True, unit=1)
+    	elif action == 'newCmds':
+    	    result = client.read_holding_registers(int(x['startregister'])-1, int(count),  unit=1)
+    	    logging.debug("-" * 20)
+    	    logging.debug(" REGISTERS ")
+    	    logging.debug("-" * 20)
+    	    logging.debug(result.registers)
+    	    if typebuilder == 'bgwb':
+    	        decoder = BinaryPayloadDecoder.fromRegisters(result.registers,byteorder=Endian.Big,wordorder=Endian.Big)
+    	    elif typebuilder == 'blwb':
+    	        decoder = BinaryPayloadDecoder.fromRegisters(result.registers,byteorder=Endian.Little,wordorder=Endian.Big)
+    	    elif typebuilder == 'bbwl':
+    	        decoder = BinaryPayloadDecoder.fromRegisters(result.registers,byteorder=Endian.Big,wordorder=Endian.Little)
+    	    elif typebuilder == 'blwl':
+    	        decoder = BinaryPayloadDecoder.fromRegisters(result.registers,byteorder=Endian.Little,wordorder=Endian.Little)
+    	    if formatToconverse == 'floatformat':
+    	        decoded = {'float': decoder.decode_32bit_float()}
+    	    elif formatToconverse == 'longformat':
+    	        decoded = {'32ints': decoder.decode_32bit_int()}
+    	    logging.debug("-" * 20)
+    	    logging.debug("Decoded Data")
+    	    logging.debug("-" * 20)
+    	    for name, value in iteritems(decoded):
+                logging.debug(str(name))
+                logging.debug(str(value))
+    client.close()
 
 
 def testAllCmds(ipDevice, registerParams):
@@ -340,9 +206,9 @@ def read_socket():
 			elif message['action'] == 'newCmds':
 			    #ret = testAllCmds(message['modbusDevice']['ipDevice'], message['modbusDevice']['registerParams'])
 			    logging.debug('testread')
-			    ret = testDecode(message['modbusDevice']['ipDevice'], message['action'], message['modbusDevice']['registerParams'])
+			    testDecode(message['modbusDevice']['ipDevice'], message['action'], message['modbusDevice']['registerParams'])
 			    logging.debug('testread2')
-			    jeedom_com.send_change_immediate(ret)
+			    #jeedom_com.send_change_immediate(ret)
 			elif message['action'] == 'test':
 			    ret = floatToRegisters(message['num'])
 			elif message['action'] == 'payload':
