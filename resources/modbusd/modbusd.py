@@ -55,9 +55,16 @@ except ImportError:
 
 
 
-def testDecode(ipdevice, action, registerParams):
-    client = ModbusTcpClient('192.168.1.112')
+def testDecode(devices, action):
+    client = ModbusTcpClient()
+    results = {}
+    results['FUNC'] = 'decoder'
+    results['ipdevice'] = ipdevice
+    results['userCmds'] = {}
     for x in registerParams:
+    	logging.debug('X COMMANDE')
+    	logging.debug(x)
+    	x['dataResult'] = {}
     	formatToconverse = x['format']
     	typebuilder = ''
     	builder = ''
@@ -82,7 +89,11 @@ def testDecode(ipdevice, action, registerParams):
     	    payload = builder.build()
     	    client.write_registers(int(x['startregister'])-1, payload, skip_encode=True, unit=1)
     	elif action == 'newCmds':
+    	    #if x['functioncode'] == 'fc01':
+    	        #result = client.read_coils(int(x['startregister'])-1, int(count),  unit=1)
+    	        #results['userCmds'][x['nameCmd']] = []
     	    result = client.read_holding_registers(int(x['startregister'])-1, int(count),  unit=1)
+    	    results['userCmds'][x['nameCmd']] = []
     	    logging.debug("-" * 20)
     	    logging.debug(" REGISTERS ")
     	    logging.debug("-" * 20)
@@ -99,13 +110,18 @@ def testDecode(ipdevice, action, registerParams):
     	        decoded = {'float': decoder.decode_32bit_float()}
     	    elif formatToconverse == 'longformat':
     	        decoded = {'32ints': decoder.decode_32bit_int()}
+    	    elif formatToconverse == 'normalformat':
+    	        decoded = {'bytes': decoder.decode_bits()}
     	    logging.debug("-" * 20)
     	    logging.debug("Decoded Data")
     	    logging.debug("-" * 20)
     	    for name, value in iteritems(decoded):
                 logging.debug(str(name))
                 logging.debug(str(value))
+                arrayBits = {'StartRegister': int(x['startregister']),'valueConverse' : value, 'CmdId' : x['cmdId']}
+                results['userCmds'][x['nameCmd']].append(arrayBits)
     client.close()
+    return results
 
 
 def testAllCmds(ipDevice, registerParams):
@@ -176,6 +192,116 @@ def testAllCmds(ipDevice, registerParams):
 	        logging.debug('INPUTREGISTER')
 	return results
 
+def writeFunc(ipdevice , registerParams):
+	logging.debug(registerParams)
+	results = {}
+	results['FUNC'] = 'write'
+	client = ModbusTcpClient(ipdevice)
+	builder = ''
+	if registerParams['wordorder'] == 'bigword' and registerParams['byteorder'] == 'bigbyte':
+	    builder = BinaryPayloadBuilder(byteorder=Endian.Big, wordorder=Endian.Big)
+	elif registerParams['wordorder'] == 'bigword' and registerParams['byteorder'] == 'littlebyte':
+	    builder = BinaryPayloadBuilder(byteorder=Endian.Big, wordorder=Endian.Big)
+	elif registerParams['wordorder'] == 'littleword' and registerParams['byteorder'] == 'bigbyte':
+	    builder = BinaryPayloadBuilder(byteorder=Endian.Big, wordorder=Endian.Big)
+	elif registerParams['wordorder'] == 'littleword' and registerParams['byteorder'] == 'littlebyte':
+	    builder = BinaryPayloadBuilder(byteorder=Endian.Big, wordorder=Endian.Big)
+	count = registerParams['nbregister']
+	if registerParams['functioncode'] == 'fc05':
+	    client.write_coil(int(registerParams['startregister'])-1, int(registerParams['value']))
+	elif registerParams['functioncode'] == 'fc06':
+	    if registerParams['format'] == 'floatformat':
+	        logging.debug(registerParams['value'])
+	        builder.add_32bit_float(float(registerParams['value']))
+	    elif registerParams['format'] == 'longformat':
+	        builder.add_32bit_int(int(registerParams['value']))
+	    payload = builder.build()
+	    client.write_registers(int(registerParams['startregister'])-1, payload, skip_encode=True, unit=1)
+	elif registerParams['functioncode'] == 'fc15':
+	    builder.add_bits()
+	    payload = builder.build()
+	    client.write_coils(int(x['startregister'])-1, payload, skip_encode=True, unit=1)
+	elif registerParams['functioncode'] == 'fc16':
+	    if registerParams['format'] == 'floatformat':
+	        builder.add_32bit_float(float(registerParams['value']))
+	    elif registerParams['format'] == 'longformat':
+	        builder.add_32bit_int(int(registerParams['value']))
+	    payload = builder.build()
+	    client.write_registers(int(registerParams['startregister'])-1, payload, skip_encode=True, unit=1)
+	client.close()
+
+
+def readFunction(devices, action):
+	logging.debug(devices)
+	results = {}
+	results['data'] = {}
+	results['FUNC'] = 'readF'
+	for device in devices:
+		logging.debug(device['deviceInfo'])
+		results['data'][device['deviceInfo']['id']]= {}
+		logging.debug(results)
+		client = ModbusTcpClient(device['deviceInfo']['ipDevice'])
+		for infoCmd in device['deviceInfo']['registerParams']:
+			logging.debug(infoCmd)
+			results['data'][device['deviceInfo']['id']][infoCmd['nameCmd']] = []
+			if infoCmd['functioncode'] == 'fc01':
+			    result = client.read_coils(int(infoCmd['startregister'])-1, int(infoCmd['nbregister']),  unit=1)
+			    payload = []
+			    for y in range(int(infoCmd['nbregister'])):
+			        parsedByte = result.bits[y]
+			        if (parsedByte == True):
+			            valTransf = 1
+			        elif (parsedByte == False):
+			            valTransf = 0
+			        payload.append(parsedByte)
+			        arrayBits = {'StartRegister': int(infoCmd['startregister']), 'CmdId' : infoCmd['cmdId'], 'value' : valTransf}
+			        results['data'][device['deviceInfo']['id']][infoCmd['nameCmd']].append(arrayBits)
+			elif infoCmd['functioncode'] == 'fc02':
+			    result = client.read_discrete(int(infoCmd['startregister']), int(infoCmd['nbregister']),  unit=1)
+			elif infoCmd['functioncode'] == 'fc03':
+			    result = client.read_holding_registers(int(infoCmd['startregister'])-1, int(infoCmd['nbregister']),  unit=1)
+			elif infoCmd['functioncode'] == 'fc04':
+			    result = client.read_input_registers(int(infoCmd['startregister'])-1, int(infoCmd['nbregister']),  unit=1)
+			if infoCmd['functioncode'] == 'fc04' or infoCmd['functioncode'] == 'fc03':
+			    if infoCmd['wordorder'] == 'bigword' and infoCmd['byteorder'] == 'bigbyte':
+			        decoder = BinaryPayloadDecoder.fromRegisters(result.registers,byteorder=Endian.Big,wordorder=Endian.Big)
+			    elif infoCmd['wordorder'] == 'bigword' and infoCmd['byteorder'] == 'littlebyte':
+			        decoder = BinaryPayloadDecoder.fromRegisters(result.registers,byteorder=Endian.Little,wordorder=Endian.Big)
+			    elif infoCmd['wordorder'] == 'littleword' and infoCmd['byteorder'] == 'bigbyte':
+			        decoder = BinaryPayloadDecoder.fromRegisters(result.registers,byteorder=Endian.Big,wordorder=Endian.Little)
+			    elif infoCmd['wordorder'] == 'littleword' and infoCmd['byteorder'] == 'littlebyte':
+			        decoder = BinaryPayloadDecoder.fromRegisters(result.registers,byteorder=Endian.Little,wordorder=Endian.Little)
+			    if infoCmd['format'] == 'floatformat':
+			        decoded = {'float': decoder.decode_32bit_float()}
+			        logging.debug(results)
+			        for name, value in iteritems(decoded):
+			            logging.debug('FLOATFORMAT')
+			            logging.debug(value)
+			            arrayBits = {'StartRegister': int(infoCmd['startregister']), 'CmdId' : infoCmd['cmdId'], 'value' : value}
+			            results['data'][device['deviceInfo']['id']][infoCmd['nameCmd']].append(arrayBits)
+			    elif infoCmd['format'] == 'longformat':
+			        decoded = {'int':decoder.decode_32bit_int()}
+			        for name, value in iteritems(decoded):
+			            logging.debug('INTFORMAT')
+			            logging.debug(value)
+			            arrayBits = {'StartRegister': int(infoCmd['startregister']), 'CmdId' : infoCmd['cmdId'], 'value' : value}
+			            results['data'][device['deviceInfo']['id']][infoCmd['nameCmd']].append(arrayBits)
+			elif infoCmd['functioncode'] == 'fc01':
+			    if infoCmd['wordorder'] == 'bigword' and infoCmd['byteorder'] == 'bigbyte':
+			        decoder = BinaryPayloadDecoder.fromCoils(payload)
+			        logging.debug(decoder)
+			    elif infoCmd['wordorder'] == 'bigword' and infoCmd['byteorder'] == 'littlebyte':
+			        decoder = BinaryPayloadDecoder.fromCoils(payload)
+			        logging.debug(decoder)
+			    elif infoCmd['wordorder'] == 'littleword' and infoCmd['byteorder'] == 'bigbyte':
+			        decoder = BinaryPayloadDecoder.fromCoils(payload)
+			        logging.debug(decoder)
+			    elif infoCmd['wordorder'] == 'littleword' and infoCmd['byteorder'] == 'littlebyte':
+			        decoder = BinaryPayloadDecoder.fromCoils(payload)
+			        logging.debug(decoder)
+	client.close()
+	return results
+
 
 def read_socket():
 	global JEEDOM_SOCKET_MESSAGE
@@ -192,8 +318,8 @@ def read_socket():
 			    logging.debug("MESSAGE ENVOYE ACTION READ")
 			    jeedom_com.send_change_immediate(ret)
 			elif message['action'] == 'writeAction':
-			    #conversionForRegisters(value, nbRegisters, formatConverse)
-			    testDecode(message['modbusDevice']['ipDevice'], message['action'], message['modbusDevice']['registerParams'])
+			    writeFunc(message['ipDevice'] , message['options'])
+			    #testDecode(message['modbusDevice']['ipDevice'], message['action'], message['modbusDevice']['registerParams'])
 			    #testWrite(message['ipDevice'], message['typeOfCmd'],message['values'], message['registers'], message['startRegister'])
 			    #writeFunction(message['ipDevice'], message['options'])
 			    logging.debug("MESSAGE ENVOYE ACTION WRITE")
@@ -205,10 +331,9 @@ def read_socket():
 			    jeedom_com.send_change_immediate(ret)
 			elif message['action'] == 'newCmds':
 			    #ret = testAllCmds(message['modbusDevice']['ipDevice'], message['modbusDevice']['registerParams'])
-			    logging.debug('testread')
-			    testDecode(message['modbusDevice']['ipDevice'], message['action'], message['modbusDevice']['registerParams'])
-			    logging.debug('testread2')
-			    #jeedom_com.send_change_immediate(ret)
+			    ret = readFunction(message['modbusDevices'], message['action'])
+			    #ret = testDecode(message['modbusDevices'], message['action'])
+			    jeedom_com.send_change_immediate(ret)
 			elif message['action'] == 'test':
 			    ret = floatToRegisters(message['num'])
 			elif message['action'] == 'payload':

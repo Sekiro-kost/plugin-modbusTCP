@@ -36,6 +36,7 @@ if (init('test') != '') {
 }*/
 
 $result = json_decode(file_get_contents("php://input"), true);
+
 log::add('modbus','debug','Result:' . json_encode($result));
 
 
@@ -79,7 +80,41 @@ if($result['FUNC'] == 'readOne'){
                   }
             }
       }
-}elseif($result['FUNC'] == 'allCmds'){        
+}elseif($result['FUNC'] == 'allCmds'){
         modbus::conversionFunction($result);
         log::add('modbus','debug','ALLCMDS : '.json_encode($result));
+}elseif($result['FUNC'] == 'decoder'){
+    log::add('modbus','debug','DECODER : '.json_encode($result));
+    foreach($result['inputRegisters'] as $key => $value){
+               foreach($value as $k => $v){
+                      $valueToEvent = $v['valueConverse'];
+                      $cmdId = intval($v['CmdId']);
+                       log::add('modbus', 'debug', 'iCMDID: ' . $cmdId);
+                        log::add('modbus', 'debug', 'VALUEEVENT: ' . $valueToEvent);
+                      $cmdsearch = cmd::byId($cmdId);
+                  /* if(is_object($cmdsearch)){
+                           $nameC = $cmdsearch->getName();
+                           $cmdsearch->event($valueToEvent);*/
+
+               }
+
+    }
+}elseif($result['FUNC'] == 'readF'){
+     foreach($result['data'] as $id => $data){
+            $eqLogicId = $id;
+            foreach($data as $nameCmd => $infos){
+              foreach($infos as $info){
+                  $cmdId = intval($info['CmdId']);
+                  $value = floatval($info['value']);
+                  $cmdsearch = cmd::byId($cmdId);
+                  if(is_object($cmdsearch)){
+                    log::add('modbus','debug','CMDTOEVENT >>>>>>> ' .$cmdsearch->getName());
+                      log::add('modbus','debug','VALUETOEVENT >>>>>>> ' .$value);
+                      $cmdsearch->event($value);
+                 }
+               }
+            }
+      }
+    log::add('modbus','debug','DECODER : '.json_encode($result));
+
 }
