@@ -33,10 +33,6 @@ class modbus extends eqLogic {
 
 
       public static function cron() {
-        /*foreach (eqLogic::byType('modbus',true) as $modbusEq) {
-          $modbusEq->postSave();
-
-        }*/
       }
 
 
@@ -121,7 +117,8 @@ class modbus extends eqLogic {
             $path = realpath(dirname(__FILE__) . '/../../resources/modbusd');
             $cmd = '/usr/bin/python3 ' . $path . '/modbusd.py';
             $cmd .= ' --loglevel ' . log::convertLogLevel(log::getLogLevel(__CLASS__));
-            $cmd .= ' --socketport ' . config::byKey('socketport', __CLASS__, '55030');
+            $cmd .= ' --socketport ' . config::byKey('socketport',__CLASS__, '55030');
+            $cmd .= ' --timesleep ' . config::byKey('timerecup', __CLASS__ ,'5');
             $cmd .= ' --sockethost 127.0.0.1';
             $cmd .= ' --callback ' . network::getNetworkAccess('internal', 'proto:127.0.0.1:port:comp') . '/plugins/modbus/core/php/jeeModbus.php';
             $cmd .= ' --apikey ' . jeedom::getApiKey(__CLASS__);
@@ -141,7 +138,8 @@ class modbus extends eqLogic {
                 log::add(__CLASS__, 'error', __('Impossible de lancer le démon, vérifiez le log', __FILE__), 'unableStartDeamon');
                 return false;
             }
-            message::removeAll(__CLASS__, 'unableStartDeamon');
+            message::removeAll(__CLASS__, 'unableStartDeamon');          
+            self::sendDevices();
             return true;
        }
 
@@ -162,82 +160,83 @@ class modbus extends eqLogic {
     public static function socketConnection($value){
         $socket = socket_create(AF_INET, SOCK_STREAM, 0);
         socket_set_timeout($socket,180);
-        socket_connect($socket, '127.0.0.1', config::byKey('socketport', 'modbus'));
+        socket_connect($socket, '127.0.0.1', config::byKey('socketport', 'modbus', 55030));
         socket_write($socket, $value, strlen($value));
         socket_close($socket);
     }
-
-
-
-
-  public static function creaCommandsRead($type, $resultats, $adresseStart, $cmd){
-          log::add(__CLASS__, 'debug', 'RESULTATSTATIC :' . json_encode($resultats));
-          $eqLogic = $cmd->getEqLogic();
-          /*$cmd->remove();*/
-          foreach($resultats as $result){
-             $adresse = intval($result[0]);
-              $cmd = $eqLogic->getCmd(null, 'ReadCoil_'.$adresse);
-              if (!is_object($cmd)) {
-                  $cmd = new modbusCmd();
-                  $cmd->setLogicalId('ReadCoil_'.$adresse);
-                  $cmd->setIsVisible(1);
-                  $cmd->setName(__('Readcoil_'.$adresse, __FILE__));
-              }
-              $cmd->setType('info');
-              $cmd->setSubType('binary');
-              $cmd->setEqLogic_id($eqLogic->getId());
-              $cmd->setConfiguration('choiceIO', 'coils');
-              $cmd->setConfiguration('adresseIO', $adresse);
-              $cmd->save();
-              $cmd->event($result[1]);
-
-
-          }
-
+  
+  
+  
+   public static function sendDevices(){
+        foreach (self::byType('modbus') as $eqLogic) {
+           /*  $eqLogic->updateCmdsParams();*/
+			 $eqLogic->updateDevices();
+			/* usleep(500);*/
+             usleep(500);           
+		 }
    }
+  
+  
+  
+   public function updateDevices(){
+        $cmdsOptions = array();
+        $value = array('apikey' => jeedom::getApiKey('modbus'), 'action' => 'updateDeviceToGlobals');
+       /* foreach ($this->getCmd('action') as $cmd) { 
+              if($cmd->getSubType() == 'slider'){
+                      log::add('modbus','debug','UPDATECMD');
+                     $stepchoice = $cmd->getConfiguration('stepchoice',0);
+                     log::add('modbus','debug','UPDATECMD: ' .$stepchoice);
+                     $arr = $cmd->getDisplay('parameters');           
+                     $arr['step'] = floatval($stepchoice);
+                     $cmd->setDisplay(parameters, $arr);
+                     $cmd->setTemplate('dashboard', 'button');
+                     $cmd->setTemplate('mobile', 'button');
+                     $cmd->save();
+              } 
+         }*/
+        
+        foreach ($this->getCmd('info') as $cmd) {
+         					  $offset =  $cmd->getConfiguration('offset',0);
+                              $cmdsOptions[]= array(
+                                					'nameCmd' => $cmd->getName(),
+                                                    'cmdId' => $cmd->getId(),
+                                                    'format' => $cmd->getConfiguration('formatIO'),
+                                                    'functioncode' => $cmd->getConfiguration('choicefunctioncode'),
+                                                    'nbregister' => $cmd->getConfiguration('nbbytes'),
+                                                    'startregister' => $cmd->getConfiguration('startregister'),
+                                                    'wordorder' => $cmd->getConfiguration('wordorder'),
+                                                    'byteorder' => $cmd->getConfiguration('byteorder'),
+                                                    'offset' => $offset
+                                                   );
+        }
 
+         $value['deviceInfo'] = array(   'typeDevice' =>  $this->getConfiguration('choicemodbus',0),
+                                         'portserial' => $this->getConfiguration('portserial',0), 
+                                         'baudrate' => $this->getConfiguration('baudrate',0),
+                                         'portrtu' => $this->getConfiguration('portrtu',0),
+                                         'parity' => $this->getConfiguration('parity',0),
+                                         'stopbits' => $this->getConfiguration('stopbits',0),
+                                          'bytesize' => $this->getConfiguration('bytesize',0),
+           								 'id' => $this->getId(),
+                                         'ipDevice' => $this->getConfiguration('ipuser', 'modbus'),
+                                         'registerParams' => $cmdsOptions
+                                  );
+        $value = json_encode($value);
+        self::socketConnection($value);
 
-   public static function creaCommandsByUser($choice, $adresse, $cmdId, $nbBytes){
-            $cmdOriginal = cmd::byId($cmdId);
-            if(is_object($cmdOriginal)){
-              $eqLogic = $cmdOriginal->getEqLogic();
-                  switch($choice){
-                      case 'coils':
-                                          $cmd = $eqLogic->getCmd(null, 'ReadCoil_'.$adresse);
-                                          $logId = 'ReadCoil_'.$adresse;
-                                          $subtype = 'binary';
-                                          break;
-                      case 'discrete':
-                                          $cmd = $eqLogic->getCmd(null, 'ReadDiscreteInput_'.$adresse);
-                                          $logId = 'ReadDiscreteInput_'.$adresse;
-                                          $subtype = 'binary';
-                                          break;
-                      case 'inputRegisters':
-                                              $cmd = $eqLogic->getCmd(null, 'ReadInputRegister_'.$adresse);
-                                              $logId = 'ReadInputRegister_'.$adresse;
-                                              $subtype = 'numeric';
-                                              break;
-                      case 'holdingRegisters':
-                                              $cmd = $eqLogic->getCmd(null, 'ReadHoldingRegister_'.$adresse);
-                                              $logId = 'ReadHoldingRegister_'.$adresse;
-                                              $subtype = 'numeric';
-                                              break;
-                    }
-                  if (!is_object($cmd)) {
-                      $cmd = new modbusCmd();
-                      $cmd->setLogicalId($logId);
-                      $cmd->setIsVisible(1);
-                      $cmd->setName(__($logId, __FILE__));
-                  }
-                  $cmd->setType('info');
-                  $cmd->setSubType($subtype);
-                  $cmd->setEqLogic_id($eqLogic->getId());
-                  $cmd->setConfiguration('choiceIO', $choice);
-                  $cmd->setConfiguration('adresseIO', $adresse);
-                  $cmd->save();
-                  $cmdOriginal->remove();
-            }
     }
+  
+  
+  
+     public function deleteDevice(){    
+          if ($this->getId() == '') {
+			return;
+		}
+        $value = json_encode(array('apikey' => jeedom::getApiKey('modbus'), 'action' => 'deleteDevice', 'deviceInfo' => array('id' => $this->getId())));
+        self::socketConnection($value);
+
+    }
+
 
 
     /*     * *********************Méthodes d'instance************************* */
@@ -263,203 +262,108 @@ class modbus extends eqLogic {
 
  // Fonction exécutée automatiquement après la mise à jour de l'équipement
     public function postUpdate() {
-        $cmd = $this->getCmd(null, 'refresh');
-         if (!is_object($cmd)) {
-             $cmd = new modbusCmd();
-             $cmd->setLogicalId('refresh');
-             $cmd->setIsVisible(1);
-             $cmd->setName(__('Rafraichir', __FILE__));
-         }
-         $cmd->setType('action');
-         $cmd->setSubType('other');
-         $cmd->setEqLogic_id($this->getId());
-         $cmd->save();
+        /* $this->updateCmdsParams();*/
+        $this->creaCoils();
+     /*   $this->creaCoils();*/
+     
+       /* $this->updateDevices();*/
+
+    }
+  
+  
+    public function postAjax() {
+        /*$this->updateDevices();
+        sleep(1);*/
+       $this->creaCoils();
+      /* $this->updateCmdsParams();*/
+       /* sleep(1);
+        self::deamon_start();*/
 
     }
 
+
  // Fonction exécutée automatiquement avant la sauvegarde (création ou mise à jour) de l'équipement
     public function preSave() {
-
+        /* $this->updateCmdsParams();  */
     }
 
  // Fonction exécutée automatiquement après la sauvegarde (création ou mise à jour) de l'équipement
     public function postSave() {
-       $this->configsCmds();
-      /* modbus::testC(231.2);*/
-
-      /*  $ipDevice = $this->getConfiguration('ipuser', 'modbus');
-        $value = array('apikey' => jeedom::getApiKey('modbus'), 'action' => 'payload');
-        $value = json_encode($value);
-        self::socketConnection($value);*/
-
-
-
-
-
+       /* $this->creaCoils();*/
+        sleep(1);
+       /* $this->updateCmdsParams();*/
+        self::deamon_start();
+        sleep(1);
+       /* $this->updateCmdsParams();*/
+     /* $this->updateDevices();*/
+     /* sleep(3);*/
+     
       }
+  
+    public function creaCoils(){
+        foreach ($this->getCmd('info') as $cmd) { 
+            $formatIO = $cmd->getConfiguration('formatIO');
+            $offset =  $cmd->getConfiguration('offset',0);
+            $function_code= $cmd->getConfiguration('choicefunctioncode');
+            $nbBytes = $cmd->getConfiguration('nbbytes');
+    	    $registre_depart = $cmd->getConfiguration('startregister');
+            $wordorder = $cmd->getConfiguration('wordorder');
+            $byteorder = $cmd->getConfiguration('byteorder');
+            $isnegatif = $cmd->getConfiguration('isnegatif');
+            if($function_code == 'fc01'){
+                      if ( $nbBytes > 1 ) {
+                              for ($i = 0; $i < $nbBytes; $i++) {
+                                $newAdresseValue = intval($registre_depart) + $i;
+                                $cmdName = 'ReadCoil' . '_' . $newAdresseValue;
+                                $newCmd = $this->getCmd(null, $cmdName);
 
-      public static function testC($f){
-
-             $ar = unpack("c*", pack("f", $f));
-             log::add(__CLASS__, 'debug', 'TESTCONVERSE :' . json_encode($ar));
-
-      }
-
-
-
-      public function configsCmds(){
-        $cmdsOptions = array();
-        $value = array('apikey' => jeedom::getApiKey('modbus'), 'action' => 'newCmds');
-        $arrayEqLogic = array();
-        $value['modbusDevices'] = array();
-        foreach (eqLogic::byType('modbus',true) as $modbusEq) {
-                      if ($modbusEq->getIsEnable() == 1) {
-                        foreach ($modbusEq->getCmd('info') as $cmd) {
-                              $cmdsOptions[]= array('nameCmd' => $cmd->getName(),
-                                                    'cmdId' => $cmd->getId(),
-                                                    'typeIO' => $cmd->getConfiguration('choiceIO'),
-                                                    'format' => $cmd->getConfiguration('formatIO'),
-                                                    'functioncode' => $cmd->getConfiguration('choicefunctioncode'),
-                                                    'nbregister' => $cmd->getConfiguration('nbbytes'),
-                                                    'startregister' => $cmd->getConfiguration('startregister'),
-                                                    'wordorder' => $cmd->getConfiguration('wordorder'),
-                                                    'byteorder' => $cmd->getConfiguration('byteorder')
-                                                   );
-                        }
-                        $arrayEqLogic['deviceInfo'] = array(
-                                                      'id' => $modbusEq->getId(),
-                                                      'ipDevice' => $modbusEq->getConfiguration('ipuser', 'modbus'),
-                                                      'registerParams' => $cmdsOptions
-                        );
-
-                      }
-        array_push($value['modbusDevices'], $arrayEqLogic);
-        $cmdsOptions = array();
-        $arrayEqLogic = array();
-      }
-      log::add(__CLASS__, 'debug', 'CONFIGSCMDS :' . json_encode($value));
-      $value = json_encode($value);
-      self::socketConnection($value);
-
-    }
-
-
-
-
-    public static function readCmds($eqLogic){
-        $eqlogicId =  $eqLogic->getId();
-        $ipDevice =  $eqLogic->getConfiguration('ipuser', 'modbus');
-        $value = array('apikey' => jeedom::getApiKey('modbus'), 'ipDevice' => $ipDevice, 'eqlogicid' => $eqlogicId,  'action' => 'readCron');
-        $cmds = cmd::byEqLogicId($eqlogicId);
-        foreach($cmds as $cmd){
-                $typeCmdJeedom = $cmd->getType();
-                $logicalId = $cmd->getLogicalId();
-                $cmdId = $cmd->getId();
-                if( ($typeCmdJeedom == 'info')/* && (strpos($logicalId, 'Read') !== FALSE)*/ ){
-                    $adresseCmd =  $cmd->getConfiguration('adresseIO');
-                    $choiceIO =  $cmd->getConfiguration('choiceIO');
-                    switch($choiceIO){
-                        case 'coils':
-                                          $cmdInfos = array('cmdId' => $cmdId, 'adresse' => $adresseCmd);
-                                          $value['data']['coils'][] = $cmdInfos;
-                                          break;
-                        case 'discrete':
-                                          $cmdInfos = array('cmdId' => $cmdId, 'adresse' => $adresseCmd);
-                                          $value['data']['discrete'][] = $cmdInfos;
-                                          break;
-                        case 'inputRegisters':
-                                                $cmdInfos = array('cmdId' => $cmdId, 'adresse' => $adresseCmd);
-                                                $value['data']['inputRegisters'][] = $cmdInfos;
-                                                break;
-                        case 'holdingRegisters':
-                                                $cmdInfos = array('cmdId' => $cmdId, 'adresse' => $adresseCmd);
-                                                $value['data']['holdingRegisters'][] = $cmdInfos;
-                                                break;
-                    }
-                }
-        }
-        log::add(__CLASS__, 'debug', 'READCMDS :' . json_encode($value));
-        $value = json_encode($value);
-        self::socketConnection($value);
-
-    }
-
-
-    public static function conversionFunction($result){
-
-         log::add(__CLASS__, 'debug', 'ALLRESULT: ' . json_encode($result));
-
-        foreach($result as $key => $value){
-             if($key == 'inputRegisters'){
-                   foreach($value as $k => $v){
-                          $valueToEvent = $v[0]['valueConverse'];
-                          $cmdId = intval($v[0]['CmdId']);
-                           log::add(__CLASS__, 'debug', 'iCMDID: ' . $cmdId);
-                          $cmdsearch = cmd::byId($cmdId);
-                          if(is_object($cmdsearch)){
-                               $nameC = $cmdsearch->getName();
-                               $cmdsearch->event($valueToEvent);
-                          }
-                   }
-              }elseif($key == 'coils'){
-                  foreach($value as $cmdName => $data){
-                        log::add(__CLASS__, 'debug', 'cmdname: ' . json_encode($cmdName));
-                        log::add(__CLASS__, 'debug', 'data: ' . json_encode($data));
-                        $cmdOrigin = cmd::byId($data[0]['CmdId']);
-                        $cmdOriginName = $cmdOrigin->getName();
-                        $eqlogic = $cmdOrigin->getEqLogic();
-                          foreach($data as $k => $v){
-
-                                $valueEvent = $v['valueConverse'];
-                                $adresseStart = $v['Byte'];
-                                $newCmdLogical = $cmdOriginName.'_'.$adresseStart;
-                                log::add(__CLASS__, 'debug', 'NEWLOGICAL ' . $newCmdLogical);
-                                $cmd = $eqlogic->getCmd(null, $newCmdLogical);
-                              /*  $nbbyte = $cmd->getConfiguration('nbbytes', 'modbus', 0);*/
-                               if(is_object($cmd)){
-                                    $cmd->event($valueEvent);
-
-                               }else{
-                                    if($cmdOrigin->getConfiguration('alreadycreate') == 'yes'){
-
-                                    }else{
-                                      if (!is_object($cmd)) {
-                                          $cmd = new modbusCmd();
-                                          $cmd->setLogicalId($newCmdLogical);
-                                          $cmd->setIsVisible(1);
-                                          $cmd->setName(__($newCmdLogical, __FILE__));
-                                          $cmd->setType('info');
-                                          $cmd->setSubType('binary');
-                                          $cmd->setEqLogic_id($eqlogic->getId());
-                                          $cmd->setConfiguration('choiceIO', 'coils');
-                                          $cmd->setConfiguration('choicefunctioncode', 'fc01');
-                                          $cmd->setConfiguration('startregister', $adresseStart + 1);
-                                          $cmd->setConfiguration('nbbytes', 1);
-                                          $cmd->setConfiguration('alreadycreate', 'yes');
-                                          $cmd->save();
-                                          $cmd->event($valueEvent);
-                                       }
-                                    }
-                               }
-                          }
-                  }
-                }
-            }
-      }
-    public static function hexTo32Float($strHex) {
-        $v = hexdec($strHex);
-        $x = ($v & ((1 << 23) - 1)) + (1 << 23) * ($v >> 31 | 1);
-        $exp = ($v >> 23 & 0xFF) - 127;
-        $float32 =  $x * pow(2, $exp - 23);
-        log::add(__CLASS__, 'debug', 'FLOAT32 : ' .$float32);
-        return $float32;
-    }
-
-
+                                if (!is_object($newCmd)) {
+                                  $newCmd = new modbusCmd();
+                                  $newCmd->setLogicalId($cmdName);
+                                  $newCmd->setIsVisible(1);
+                                  $newCmd->setName(__($cmdName, __FILE__));
+                                }
+                                $newCmd->setType('info');
+                                $newCmd->setSubType('binary');
+                                $newCmd->setEqLogic_id($this->getId());
+                                $newCmd->setConfiguration('formatIO',$formatIO);
+                                $newCmd->setConfiguration('choicefunctioncode',$function_code);
+                                $newCmd->setConfiguration('wordorder',$wordorder);
+                                $newCmd->setConfiguration('byteorder',$byteorder);
+                                $newCmd->setConfiguration('startregister',$newAdresseValue);
+                                $newCmd->setConfiguration('nbbytes',1);
+                                $newCmd->setConfiguration('offset',$offset);
+                                $cmd->remove();
+                                $newCmd->save();
+                              }
+                    }                
+             } 
+        }    
+      
+    } 
+  
+  
+  public function updateCmdsParams(){
+         foreach ($this->getCmd('action') as $cmd) { 
+              if($cmd->getSubType() == 'slider'){
+                     
+                     $stepchoice = $cmd->getConfiguration('stepchoice', 0);
+                     $arr = $cmd->getDisplay('parameters');           
+                     $arr['step'] = $stepchoice;
+                     $cmd->setDisplay(parameters, $arr);
+                     $cmd->setTemplate('dashboard', 'button');
+                     $cmd->setTemplate('mobile', 'button');
+                     $cmd->save();
+              }
+         }
+  }
 
 
  // Fonction exécutée automatiquement avant la suppression de l'équipement
     public function preRemove() {
+         $this->deleteDevice();
+         sleep(1);
+         self::deamon_start();
 
     }
 
@@ -512,54 +416,61 @@ class modbusCmd extends cmd {
   // Exécution d'une commande
      public function execute($_options = array()) {
 
+          if ($this->type != 'action') {
+			return;
+		  }
           $eqLogic = $this->getEqLogic();
           $cmdlogical = $this->getLogicalId();
           $ipDevice = $eqLogic->getConfiguration('ipuser', 'modbus');
+          $offset =  $this->getConfiguration('offset',0);
+          
+          
 
           $cmdsOptions= array('nameCmd' => $this->getName(),
                                 'cmdId' => $this->getId(),
-                                'typeIO' => $this->getConfiguration('choiceIO'),
                                 'functioncode' => $this->getConfiguration('choicefunctioncode'),
                                 'nbregister' => $this->getConfiguration('nbbytes'),
                                 'startregister' => $this->getConfiguration('startregister'),
                                 'format' => $this->getConfiguration('formatIO'),
                                 'wordorder' => $this->getConfiguration('wordorder'),
-                                'byteorder' => $this->getConfiguration('byteorder')
+                                'byteorder' => $this->getConfiguration('byteorder'),
+                                'offset' =>  $offset,
+                                'valuesrequest' => $requestVal
                                );
-          if($cmdlogical == 'refresh'){
-              /*  modbus::readCmds($eqLogic);*/
-                $eqLogic->configsCmds();
-          }
-
+ 
 
           if($this->getSubtype() == 'slider'){
-               if($this->getConfiguration('decimal', 0) == 1){
-                 log::add('modbus', 'debug', 'IHIHIHIHIH : ');
-                 $arr = $this->getDisplay('parameters');
-                 $arr['step'] = 0.1;
+                 $stepchoice = $this->getConfiguration('stepchoice', 0);
+                 $arr = $this->getDisplay('parameters');           
+                 $arr['step'] = $stepchoice;
                  $this->setDisplay(parameters, $arr);
+                 $this->setTemplate('dashboard', 'button');
+                 $this->setTemplate('mobile', 'button');
                  $this->save();
-               }
-               $cmdsOptions['value']= $_options['slider'];
-               $value = json_encode(array('apikey' => jeedom::getApiKey('modbus'), 'ipDevice' => $ipDevice, 'action' => 'writeAction', 'options' => $cmdsOptions));
-               log::add('modbus', 'debug', 'WRITETEST : ' .$value);
-               modbus::socketConnection($value);
+                 $cmdsOptions['value']= $_options['slider'];
+                 $value = json_encode(array('apikey' => jeedom::getApiKey('modbus'), 'ipDevice' => $ipDevice, 'action' => 'writeAction', 'options' => $cmdsOptions));
+                 log::add('modbus', 'debug', 'WRITETESTSsssssssSSSSSSTTTTTT : ' .$value);
+                 modbus::socketConnection($value);
 
           }
 
-
-          if($this->getSubtype() == 'other'){
-             $cmdsOptions['value']= $this->getConfiguration('valeurToAction');
+          if($this->getSubtype() == 'other' && $cmdlogical != 'refresh'){
+             $requestVal = array_map('intval', explode(" ", $this->getConfiguration('request',0)));
+             foreach($requestVal as $val){
+                    if($val != 0 && $val != 1){
+                       log::add('modbus', 'debug', 'ERREUR DANS VOS DONNEES COILS : N ECRIRE QUE 0 ou 1');
+                       return;
+                    }               
+               }
+              $cmdsOptions['value']= $this->getConfiguration('valeurToAction');
+              $cmdsOptions['valuesrequest']= $requestVal;
+            
              $value = json_encode(array('apikey' => jeedom::getApiKey('modbus'), 'ipDevice' => $ipDevice, 'action' => 'writeAction', 'options' => $cmdsOptions));
+             log::add('modbus','debug', 'kikiii' .json_encode($requestVal));
              log::add('modbus', 'debug', 'WRITETEST : ' .$value);
              modbus::socketConnection($value);
 
           }
-
-
-
-
-
 
          if($this->getSubtype() == 'message'){
              $arrayVal = explode('-', $_options['message']);

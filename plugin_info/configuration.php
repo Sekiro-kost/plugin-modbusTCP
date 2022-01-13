@@ -31,6 +31,13 @@ if (!isConnect()) {
         <input class="configKey form-control" data-l1key="socketport" placeholder="55030 default"/>
       </div>
     </div>
+        <div class="form-group">
+      <label class="col-md-4 control-label">{{Temps recuperation entre chaque requete (en secondes)}}
+      </label>
+      <div class="col-md-4">
+        <input class="configKey form-control" data-l1key="timerecup" placeholder=""/>
+      </div>
+    </div>
 
   </fieldset>
 </form>

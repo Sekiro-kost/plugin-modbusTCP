@@ -92,14 +92,13 @@ if($result['FUNC'] == 'readOne'){
                        log::add('modbus', 'debug', 'iCMDID: ' . $cmdId);
                         log::add('modbus', 'debug', 'VALUEEVENT: ' . $valueToEvent);
                       $cmdsearch = cmd::byId($cmdId);
-                  /* if(is_object($cmdsearch)){
-                           $nameC = $cmdsearch->getName();
-                           $cmdsearch->event($valueToEvent);*/
 
                }
 
     }
 }elseif($result['FUNC'] == 'readF'){
+    $dataCorrespond = $result['data'];
+    log::add('modbus','debug','DATACORRESPOND : '.json_encode($dataCorrespond));
      foreach($result['data'] as $id => $data){
             $eqLogicId = $id;
             foreach($data as $nameCmd => $infos){

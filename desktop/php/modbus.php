@@ -122,20 +122,104 @@ $eqLogics = eqLogic::byType($plugin->getId());
 									<label class="checkbox-inline"><input type="checkbox" class="eqLogicAttr" data-l1key="isVisible" checked/>{{Visible}}</label>
 								</div>
 							</div>
-							<div class="form-group">
-							<label class="col-lg-3 control-label" >{{Type Modbus}}</label>
-							<div class="col-lg-4">
-									<select id="typeOf_modbus" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="typeOf_modbus">
-											<option value="rtu">{{Modbus RTU}}</option>
-											<option value="tcp">{{Modbus TCP}}</option>
-									</select>
-							</div>
+                            <br>
+                            <br>
+							<div class="form-group" style="display:flex;">
+                                      
+                                      <div class="form-group">
+                                          <label class="col-lg-6 control-label" >{{Type Modbus}}</label>
+                                          <div class="col-lg-6">
+                                            <select id="choicemodbus" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="choicemodbus">
+                                                <option value="tcp">{{TCP}}</option>
+                                                <option value="rtu">{{Modbus RTU}}</option>
+                                            </select>
+                                          </div>
+                                      </div>
 
-							<label class="col-lg-3 control-label" >{{Ip User}}</label>
-							<div class="col-lg-4">
-									<input type="text" id="ipuser" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="ipuser">
-							</div>
-					</div>
+                                   
+                                       <div class="col-lg-6" id="div_paramsrtu" style="display:none;">
+                                          <form class="form-horizontal">
+                                          <fieldset>
+                                               <legend><i class="fas fa-wrench"></i>{{Parametres}}</legend>
+                                          </fieldset>
+                                              <div class="form-group" id="ipuser" style="display:none;">
+                                                   <label class="col-lg-6 control-label" >{{Ip Device}}</label>
+                                                   <div class="col-lg-6">
+                                                        <input type="text" id="ipuser" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="ipuser">
+                                                   </div>
+                                               </div>
+                                      
+                                      
+                                         <div class="form-group" id="div-portserial" style="display:none;">
+                                                    <label class="col-lg-4 control-label">{{Port Série}}</label>
+                                                    <div class="col-lg-4">
+                                                        <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="portserial">
+                                                            <option value="auto">{{Auto}}</option>
+                                                            <?php
+                                    							foreach (jeedom::getUsbMapping('', true) as $name => $value) {
+                                       									 echo '<option value="' . $value . '">' . $name . ' (' . $value . ')</option>';
+                                   								 }
+                                 							   ?>
+                                                        </select>
+                                                    </div>
+                                           </div>
+                                      
+                                      
+                                      
+                                          <div class="form-group" id="div-baudrate"  style="display:none;">   
+                                               <label class="col-lg-4 control-label">{{Baudrate}}</label>
+                                               <div class="col-lg-4">
+                                                      <select id="baudrate" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="baudrate">
+                                                          <option value="300">300</option>
+                                                          <option value="600">600</option>
+                                                          <option value="1200">1200</option>
+                                                          <option value="2400">2400</option>
+                                                          <option value="4800">4800</option>
+                                                          <option value="9600">9600</option>
+                                                          <option value="14400">14400</option>
+                                                          <option value="19200">19200</option>
+                                                          <option value="38400">38400</option>
+                                                          <option value="56000">56000</option>
+                                                          <option value="57600">57600</option>
+                                                          <option value="115200">115200</option>
+                                                          <option value="128000">128000</option>
+                                                          <option value="230400">230400</option>
+                                                          <option value="256000">256000</option>
+                                                      </select>
+                                               </div>
+                                          </div>
+                                              <div class="form-group" id="div-parity"  style="display:none;">
+                                                  <label class="col-lg-4 control-label">{{Parité}}</label>
+                                                  <div class="col-lg-4">
+                                                      <select id="parity" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="parity">
+                                                          <option value="N">{{Aucune}}</option>
+                                                          <option value="E">{{Paire}}</option>
+                                                          <option value="O">{{Impaire}}</option>
+                                                      </select>
+                                                  </div>
+                                              </div>
+                                           <div class="form-group" id="div-bytesize"  style="display:none;">
+                                                <label class="col-lg-4 control-label">{{Taille de l octet}}</label>
+                                                <div class="col-lg-4">
+                                                    <select id="bytesize" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="bytesize">
+                                                        <option value="7">{{7 Data Bits}}</option>
+                                                        <option value="8">{{8 Data Bits}}</option>
+                                                    </select>
+                                                </div>
+                                           </div>
+                                             <div class="form-group" id="div-stopbits"  style="display:none;">
+                                                  <label class="col-lg-4 control-label">{{Bit de fin}}</label>
+                                                  <div class="col-lg-4">
+                                                      <select id="stopbits" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="stopbits">
+                                                          <option value="1">{{1 Stop Bit}}</option>
+                                                          <option value="1.5">{{1.5 Stop Bits}}</option>
+                                                          <option value="2">{{2 Stop Bits}}</option>
+                                                      </select>
+                                                  </div>
+                                              </div>
+                                       </div>
+
+				         	</div>
 
 
 						</div>
