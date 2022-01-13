@@ -7,16 +7,16 @@ Plugin permettant de lire et écrire sur vos equipements ModbusTCP/IP
 # Configuration du plugin
 
 Après téléchargement du plugin, il faut tout d’abord activer celui-ci, comme tout plugin Jeedom :
-![config](../images/start.jpeg)
+![config](../images/start.jpg)
 
 Ensuite, il faut lancer l’installation des dépendances (même si elles apparaissent OK) :
-![dependances](../images/dep.jpeg)
+![dependances](../images/dep.jpg)
 
 Enfin, il faut démarrer le démon :
 ![demon](../images/reStDemon.png)
 
 Rien n’est à modifier dans le champ « Port socket interne » de la section « Configuration ».
-![socket](../images/config.png)
+![socket](../images/config.jpg)
 
 Vous pouvez choisir le polling (en secondes) entre chaque requete de lecture sur vos devices Modbus ( par defaut il est de 5 sec).
 
@@ -34,7 +34,7 @@ Details des parametres :
 
 Choix du type de communication du device :
 
-![type](../images/choice.png)
+![type](../images/choice.jpg)
 
 COMMANDES DE LECTURE :
 Pour les entrées Coils :
