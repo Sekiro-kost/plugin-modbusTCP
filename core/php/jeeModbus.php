@@ -44,62 +44,9 @@ if (!is_array($result)) {
 	die();
 }
 
-if($result['FUNC'] == 'readOne'){
+if($result['FUNC'] == 'readF'){
     $dataCorrespond = $result['data'];
     log::add('modbus','debug','DATACORRESPOND : '.json_encode($dataCorrespond));
-    $eqlogicId = $result['eqlogicId'];
-    $cmdId = $result['cmdId'];
-    $cmdsearch = cmd::byId($cmdId);
-    if(is_object($cmdsearch)){
-        if($result['multiple'] == 'yes'){
-            modbus::creaCommandsRead($result['data'], $result['adresse'], $cmdsearch);
-            $cmds = cmd::byEqLogicId($eqlogicId);
-            foreach($cmds as $cmd){
-                $logicalId = $cmd->getLogicalId();
-                if(strpos($logicalId, 'ReadCoil') !== FALSE){
-  						        $adresse = $cmd->getConfiguration('adresseIO');
-                      foreach ($result['result'] as $val) {
-                           $cmdsearch->event($val);
-                      }
-                 }
-            }
-          }else{
-              $val = $result['result'][0];
-              $cmdsearch->event($val);
-      }
-      log::add('modbus','debug','JEE RETURN : '.json_encode($result['result'][0]));
-     }
-}elseif($result['FUNC'] == 'readCron'){
-  log::add('modbus','debug','READCRON : '.json_encode($result['data']));
-     $eqLogic = eqLogic::byId(intval($result['eqlogicId']));
-     foreach($result['data'] as $k => $v){
-           foreach($v as $cmdid => $val){
-                   $cmd = cmd::byId($cmdid);
-                   if(is_object($cmd)){
-                      $cmd->event($val);
-                  }
-            }
-      }
-}elseif($result['FUNC'] == 'allCmds'){
-        modbus::conversionFunction($result);
-        log::add('modbus','debug','ALLCMDS : '.json_encode($result));
-}elseif($result['FUNC'] == 'decoder'){
-    log::add('modbus','debug','DECODER : '.json_encode($result));
-    foreach($result['inputRegisters'] as $key => $value){
-               foreach($value as $k => $v){
-                      $valueToEvent = $v['valueConverse'];
-                      $cmdId = intval($v['CmdId']);
-                       log::add('modbus', 'debug', 'iCMDID: ' . $cmdId);
-                        log::add('modbus', 'debug', 'VALUEEVENT: ' . $valueToEvent);
-                      $cmdsearch = cmd::byId($cmdId);
-                  /* if(is_object($cmdsearch)){
-                           $nameC = $cmdsearch->getName();
-                           $cmdsearch->event($valueToEvent);*/
-
-               }
-
-    }
-}elseif($result['FUNC'] == 'readF'){
      foreach($result['data'] as $id => $data){
             $eqLogicId = $id;
             foreach($data as $nameCmd => $infos){
@@ -108,7 +55,7 @@ if($result['FUNC'] == 'readOne'){
                   $value = floatval($info['value']);
                   $cmdsearch = cmd::byId($cmdId);
                   if(is_object($cmdsearch)){
-                    log::add('modbus','debug','CMDTOEVENT >>>>>>> ' .$cmdsearch->getName());
+                      log::add('modbus','debug','CMDTOEVENT >>>>>>> ' .$cmdsearch->getName());
                       log::add('modbus','debug','VALUETOEVENT >>>>>>> ' .$value);
                       $cmdsearch->event($value);
                  }
@@ -116,5 +63,19 @@ if($result['FUNC'] == 'readOne'){
             }
       }
     log::add('modbus','debug','DECODER : '.json_encode($result));
+
+}else if($result['FUNC'] == 'write'){
+       log::add('modbus','debug','RETURNFUNCTIONWRITE'.json_encode($result));
+       if($result['isOk'] == 'no'){
+         message::add('modbus','ERREUR ECRITURE', 'plop', 'messageWriteError');
+         message::removeAll('modbus', 'messageWriteError');
+
+       }else{
+          message::add('modbus','ECRITURE OKI', 'plopr', 'messageWriteOk');
+          message::removeAll('modbus', 'messageWriteOk');
+
+       }
+
+
 
 }

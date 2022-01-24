@@ -27,7 +27,41 @@ $("#table_cmd").sortable({
 });
 
 
+$("#choicemodbus").on('change', function() {
+     var typeModbus = $("#choicemodbus").val();
+     if(typeModbus == 'tcp'){
+         $("#div_paramsrtu").show();
+         $("#ipuser").show();
+         $("#div-bytesize").hide();
+         $("#div-baudrate").hide();
+         $("#div-stopbits").hide();
+         $("#div-parity").hide();
+         $("#div-portserial").hide();
+         $("#div-unitid").hide();
 
+
+        /* $("#paramsrtu").hide(); */
+     }else if(typeModbus == 'rtu'){
+            /* $("#paramsrtu").show();*/
+         $("#div_paramsrtu").show();
+         $("#ipuser").hide();
+         $("#div-bytesize").show();
+         $("#div-baudrate").show();
+         $("#div-stopbits").show();
+         $("#div-parity").show();
+         $("#div-portserial").show();
+         $("#div-unitid").show();
+     }else if(typeModbus == 'ascii'){
+       $("#div_paramsrtu").show();
+       $("#ipuser").hide();
+       $("#div-bytesize").show();
+       $("#div-baudrate").show();
+       $("#div-stopbits").show();
+       $("#div-parity").show();
+       $("#div-portserial").show();
+       $("#div-unitid").show();
+     }
+});
 
 /* Fonction permettant l'affichage des commandes dans l'équipement */
 function addCmdToTable(_cmd) {
@@ -56,54 +90,53 @@ function addCmdToTable(_cmd) {
    tr += '</div>';
    tr += '</td>';
    tr += '<td>';
-   tr += '<span class="type" type="' + init(_cmd.type) + '">' + jeedom.cmd.availableType() + '</span>';
+   tr += '<span class="type" id="' + init(_cmd.type) + '" type="' + init(_cmd.type) + '">' + jeedom.cmd.availableType() + '</span>';
    tr += '<span class="subType" subType="' + init(_cmd.subType) + '"></span>';
    tr += '</td>';
    tr += '<td style="min-width:150px;width:350px;">';
-    tr += '<input class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="minValue" placeholder="{{Min.}}" title="{{Min.}}" style="width:30%;display:inline-block;"/> ';
-    tr += '<input class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="maxValue" placeholder="{{Max.}}" title="{{Max.}}" style="width:30%;display:inline-block;"/> ';
-    tr += '<input class="cmdAttr form-control input-sm" data-l1key="unite" placeholder="{{Unité}}" title="{{Unité}}" style="width:30%;display:inline-block;"/>';
-    tr += '</td>';
+   tr += '<input class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="minValue" placeholder="{{Min.}}" title="{{Min.}}" style="width:30%;display:inline-block;"/> ';
+   tr += '<input class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="maxValue" placeholder="{{Max.}}" title="{{Max.}}" style="width:30%;display:inline-block;"/> ';
+   tr += '<input class="cmdAttr form-control input-sm" data-l1key="unite" placeholder="{{Unité}}" title="{{Unité}}" style="width:30%;display:inline-block;"/>';
+   tr += '</td>';
 
    tr += '<td>';
-   tr += '<label class="checkbox-inline"><input type="checkbox" class="cmdAttr" data-l1key="configuration" data-l2key="decimal">{{Decimale}}</label>';
-   tr += '<select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="choiceIO" id="choiceIO" style="margin-top : 5px;" title="{{Choisir Type}}">';
-   tr += '<option value="discrete">{{Discrete Inputs}}</option>';
-   tr += '<option value="coils">{{Coils}}</option>';
-   tr += '<option value="inputRegisters">{{Input Registers}}</option>';
-   tr += '<option value="holdingRegisters">{{Holding Registers}}</option>';
-   tr += '</select>';
+   tr += '<label class="checkbox"><input type="checkbox" class="cmdAttr" data-l1key="configuration" data-l2key="isnegatif">{{Valeur negative}}</label>';
+   tr += '<label class="checkbox"><input type="checkbox" class="cmdAttr" data-l1key="configuration" data-l2key="offset">{{Offset}}</label>';
+   tr += '<input class="cmdAttr form-control tooltips input-sm" data-l1key="configuration" data-l2key="stepchoice" placeholder="{{Choisir le pas du slider (0.1, 0.5 etc..)}}" style="width:100%;"/>';
    tr += '</td>';
    tr += '<td>';
-   tr += '<select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="formatIO" style="margin-top : 5px;">';
-   tr += '<option value="normalformat">{{Normal}}</option>';
-   tr += '<option value="longformat">{{LongInteger}}</option>';
+   tr += '<select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="formatIO" style="margin-top : 5px;font-weight:bold;">';
+   tr += '<option value="" selected disabled>{{Format données}}</option>';
+   tr += '<option value="bitsformat">{{Bits}}</option>';
+   tr += '<option value="longformat">{{Long / Integer}}</option>';
    tr += '<option value="floatformat">{{Float (Real4)}}</option>';
+   tr += '<option value="bcd">{{BCD}}</option>';
    tr += '</select>';
-   tr += '<select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="wordorder" style="margin-top : 5px;">';
-   tr += '<option value="" selected>{{== Word Order ==}}</option>';
+   tr += '<select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="wordorder" style="margin-top : 5px;font-weight:bold;">';
+   tr += '<option value="" selected disabled>{{== Word Order ==}}</option>';
    tr += '<option value="littleword">{{Little First}}</option>';
    tr += '<option value="bigword">{{Big First}}</option>';
    tr += '</select>';
-   tr += '<select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="byteorder" style="margin-top : 5px;">';
-   tr += '<option value="" selected>{{== Byte Order ==}}</option>';
+   tr += '<select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="byteorder" style="margin-top : 5px;font-weight:bold;">';
+   tr += '<option value="" selected disabled>{{== Byte Order ==}}</option>';
    tr += '<option value="littlebyte">{{Little First}}</option>';
    tr += '<option value="bigbyte">{{Big First}}</option>';
    tr += '</select>';
    tr += '<input class="cmdAttr form-control tooltips input-sm" data-l1key="configuration" data-l2key="startregister" placeholder="{{Registre départ}}" style="width:100%;"/>';
    tr += '<input class="cmdAttr form-control tooltips input-sm" data-l1key="configuration" data-l2key="nbbytes" placeholder="{{Nb de bytes}}" style="width:100%"/>';
-   tr += '<select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="choicefunctioncode" id="choicefunctioncode" style="margin-top : 5px;">';
-   tr += '<option value="" selected>{{FONCTION CODE}}</option>';
-   tr += '<option value="fc01" id="fc01">{{Fc1 Read Coils}}</option>';
-   tr += '<option value="fc02" id="fc02">{{Fc2 Read Discrete}}</option>';
-   tr += '<option value="fc03" id="fc03">{{Fc3 Read Holding Registers}}</option>';
-   tr += '<option value="fc04" id="fc04">{{Fc4 Read Input Registers}}</option>';
-   tr += '<option value="fc05" id="fc05">{{Fc5 Write Single Coil}}</option>';
-   tr += '<option value="fc06" id="fc06">{{Fc6 Write Single Register}}</option>';
-   tr += '<option value="fc15" id="fc15">{{Fc15 Write Multiple Coils}}</option>';
-   tr += '<option value="fc16" id="fc16">{{Fc16 Write Multiple Registers}}</option>';
-    tr += '</select>';
+   tr += '<select class="cmdAttr form-control input-sm" data-l1key="configuration" data-l2key="choicefunctioncode" id="choicefunctioncode" style="margin-top : 5px;font-weight:bold;">';
+   tr += '<option value="" selected disabled>{{FONCTION CODE}}</option>';
+   tr += '<option value="fc01" class="readOption" id="fc01">{{Fc1 Read Coils}}</option>';
+   tr += '<option value="fc02" class="readOption" id="fc02">{{Fc2 Read Discrete}}</option>';
+   tr += '<option value="fc03" class="readOption" id="fc03">{{Fc3 Read Holding Registers}}</option>';
+   tr += '<option value="fc04" class="readOption" id="fc04">{{Fc4 Read Input Registers}}</option>';
+   tr += '<option value="fc05" class="writeOption" id="fc05">{{Fc5 Write Single Coil}}</option>';
+   tr += '<option value="fc06" class="writeOption" id="fc06">{{Fc6 Write Single Register}}</option>';
+   tr += '<option value="fc15" class="writeOption" id="fc15">{{Fc15 Write Multiple Coils}}</option>';
+   tr += '<option value="fc16" class="writeOption" id="fc16">{{Fc16 Write Multiple Registers}}</option>';
+   tr += '</select>';
    tr += '<input class="cmdAttr form-control tooltips input-sm" data-l1key="configuration" data-l2key="valeurToAction" placeholder="{{Valeur à envoyer pour WriteCoil (0 ou 1)}}" style="width:100%"/>';
+   tr += '<textarea style="height: 35px; margin-top: 5px; margin-bottom: 0px;" class="cmdAttr form-control input-sm" data-l1key="configuration" placeholder="Valeurs a envoyer aux coils" data-l2key="request"></textarea>';
    tr += '</td>';
    tr += '<td style="min-width:80px;width:350px;">';
    tr += '<label class="checkbox-inline"><input type="checkbox" class="cmdAttr" data-l1key="isVisible" checked/>{{Afficher}}</label>';
@@ -114,6 +147,8 @@ function addCmdToTable(_cmd) {
    if (is_numeric(_cmd.id)) {
      tr += '<a class="btn btn-default btn-xs cmdAction" data-action="configure"><i class="fas fa-cogs"></i></a> ';
      tr += '<a class="btn btn-default btn-xs cmdAction" data-action="test"><i class="fas fa-rss"></i> Tester</a>';
+     tr += '<a class="btn btn-primary btn-xs cmdAction" data-action="sendValues" data-value="'+_cmd.configuration['sendtest']+'">{{Envoyer Valeurs}}</a>';
+
    }
    tr += '<i class="fas fa-minus-circle pull-right cmdAction cursor" data-action="remove"></i></td>';
    tr += '</tr>';
@@ -131,26 +166,89 @@ function addCmdToTable(_cmd) {
        jeedom.cmd.changeType(tr, init(_cmd.subType));
      }
    });
- }
+
+   $('.cmdAction[data-action=sendValues]').off().on('click', function() {
+         var sendValue = ''
+         var cmdtest = $(this).closest('tr');
+         jeedom.cmd.execute({
+          id: cmdtest.attr('data-cmd_id'),
+          cache: 0,
+          notify: false,
+          async: false,
+          success: function(result) {
+             sendValue = result.toString(2);
+          }
+          })
+         
+
+      bootbox.prompt({
+      title: '{{Modifier Valeur}}',
+      size: 'small',
+      value :  sendValue,
+      maxlength: sendValue.length,
+      callback: function (result) {
+
+        if (result) {
+          if(sendValue.length == result.length && $.isNumeric(result)){
+                  let pattern = /[2-9]/g;
+                  let resultRegex = result.match(pattern);
+                  if(resultRegex == null){
+                        $('#div_alert').showAlert({message: '{{Envoi des valeurs en cours...}}', level: 'warning'})
+                        $.ajax({
+                          type: "POST",
+                          url: "plugins/modbus/core/ajax/modbus.ajax.php",
+                          data: {
+                            action: "sendValues",
+                            cmd_id: tr.attr('data-cmd_id'),
+                            id:  $('.eqLogicAttr[data-l1key=id]').value(),
+                            value: parseInt(result,2)
+
+                          },
+                          dataType: 'json',
+                          error: function (request, status, error) {
+                            handleAjaxError(request, status, error, $('#div_alert'))
+                          },
+                          success: function (data) {
+                                    $('#div_alert').showAlert({message: '{{Tentative d ecriture......}}', level: 'success'})
+                                    $('#div_alert').fadeOut(10000)
+                          }
+                        })
+                  }else{
+                     $('#div_alert').showAlert({message: '{{Valeurs souhaitées : 0 ou 1 ...}}', level: 'warning'})
+                  }
+           }else{
+              $('#div_alert').showAlert({message: '{{Mettre que des valeurs numeriques ou Taille differentes de l original...}}', level: 'warning'})
 
 
-/*
- $("#choiceIO").on('change', function() {
-   console.log('coucou');
-   var choiceIO = $('#choiceIO option:selected').val();
-  console.log(choiceIO);
-   if(choiceIO == "inputRegisters"){
-      $("#choicefunctioncode option[value='fc01']").hide();
-      $("#fc02").hide();
-      $("#fc03").hide();
-      $("#fc05").hide();
-      $("#fc06").hide();
-      $("#fc15").hide();
-      $("#fc16").hide();
+           }
 
-   }else if(choiceIO == ""){
+        }
+      }
+
+   })
 
 
-   }
- });
-*/
+   })
+
+
+   $(".cmdAttr[data-l1key=type]").on('change', function() {
+       var cmdtest = $(this).closest('tr');
+       var idTest = cmdtest.attr('data-cmd_id');
+       var typeOfCmd  =  cmdtest.attr('data-l1key=type');
+      //  var typeOfCmd = $('.cmdAttr[data-l1key=type]').value();
+     //  var yo =  $('.cmdAttr[data-l2key=choicefunctioncode]').value();
+    // var yo = cmdtest.attr('data-l2key=choicefunctioncode');
+     console.log(idTest);
+
+     if (typeOfCmd == 'action') {
+         //var yo = tr.attr('data-l1key=choicefunctioncode')
+       $('.readOption').prop('disabled', true);
+       $('.writeOption').prop('disabled', false);
+     } else if (typeOfCmd == 'info') {
+       $('.readOption').prop('disabled', false);
+       $('.writeOption').prop('disabled', true);
+     }
+  });
+
+
+}
