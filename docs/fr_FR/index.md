@@ -83,33 +83,36 @@ IMPORTANT :
 
 
   - Ecriture MultiRegistre : dans la configuration de la commande, il vous faut rentrer le registre de départ, ainsi que l'ordre des bytes et word.
-         Par défaut, le fonctionCode est de fc16. Veuillez laisser cette configuration par défaut.
+  Par défaut, le fonctionCode est de fc16. Veuillez laisser cette configuration par défaut.
 
-         Pour changer les valeurs sur les registres, il faut utiliser cette syntaxe:
-             - valeuraenvoyer&nbderegistre, séparé par | :   Ex:  120&1|214.5&4      Nous envoyons l'entier 120 sur un registre, en partant du registre de départ configuré,
-             puis 214.5 en float sur 4 registres suivant le précédent.
+  Pour changer les valeurs sur les registres, il faut utiliser cette syntaxe:
+  - valeuraenvoyer&nbderegistre, séparé par | :   Ex:  120&1|214.5&4      Nous envoyons l'entier 120 sur un registre, en partant du registre de départ configuré,
+  puis 214.5 en float sur 4 registres suivant le précédent.
 
-         Pour les types float, écrire la valeur comme ci dessus, avec un .
+  Pour les types float, écrire la valeur comme ci dessus, avec un .
 
 
-   - Ecriture MultiCoils : dans la configuration de la commande, il vous faut rentrer le registre de départ
-          Par défaut, le fonctionCode est de fc15. Veuillez laisser cette configuration par défaut.
 
-          Pour changer les valeurs sur les registres, il faut utiliser cette syntaxe:
-              -  ex : 01110111    Cela enverra donc à partir du registre de départ configuré les valeurs True(1) ou False(0) aux registres
+    - Ecriture MultiCoils : dans la configuration de la commande, il vous faut rentrer le registre de départ
+   Par défaut, le fonctionCode est de fc15. Veuillez laisser cette configuration par défaut.
+
+   Pour changer les valeurs sur les registres, il faut utiliser cette syntaxe:
+    -  ex : 01110111    Cela enverra donc à partir du registre de départ configuré les valeurs True(1) ou False(0) aux registres
+
+
 
 
     - Ecriture Bit : dans la configuration de la commande, il vous faut rentrer le registre de départ, ainsi que l'ordre des bytes et word.
-           Par défaut, le fonctionCode est de fc03, car cette commande sera a donner la valeur du registre parametré en binaire à la commande info "infobitbinary".
+    Par défaut, le fonctionCode est de fc03, car cette commande sera a donner la valeur du registre parametré en binaire à la commande info "infobitbinary".
 
-           Veuillez laisser cette configuration par défaut.
+    Veuillez laisser cette configuration par défaut.
 
-           Sur la commande info "infobitbinary", vous aurez la valeur binaire du registre parametre à la commande Ecriture Bit.
-           Pour changer le bit sur le registre
+    Sur la commande info "infobitbinary", vous aurez la valeur binaire du registre parametre à la commande Ecriture Bit.
+    Pour changer le bit sur le registre
 
-               - valeuraenvoyer&PositionBit :   Ex:  1&4      Nous envoyons la valeur 1 au bit de la position 4 en partant de la droite
-              Sur la commande info "infobitbinary", vous voyez la valeur 10000101, qui correspond a la valeur binaire du registre parametre.
-              En ecrivant 1&6, vous aurez dorenavant la valeur : 10100101 sur le registre parametré.
+    - valeuraenvoyer&PositionBit :   Ex:  1&4      Nous envoyons la valeur 1 au bit de la position 4 en partant de la droite
+    Sur la commande info "infobitbinary", vous voyez la valeur 10000101, qui correspond a la valeur binaire du registre parametre.
+    En ecrivant 1&6, vous aurez dorenavant la valeur : 10100101 sur le registre parametré.
 
 
 
@@ -121,18 +124,18 @@ IMPORTANT :
 Pour écrire sur un Coil :
 
   Exemple pour le registre 1 On:
-    - Vous ajouter une Nouvelle I/O ModbusTCP, et vous nommez la commande. Vous choisissez une commande de type Action, sous type Defaut.
-    - Choisir Fc5 Write Single Coil
-    - Registre de depart : 1
-    - Nb de bytes : 1
-    - Mettre 1 dans valeur a envoyer
+  - Vous ajouter une Nouvelle I/O ModbusTCP, et vous nommez la commande. Vous choisissez une commande de type Action, sous type Defaut.
+  - Choisir Fc5 Write Single Coil
+  - Registre de depart : 1
+  - Nb de bytes : 1
+  - Mettre 1 dans valeur a envoyer
 
   Exemple pour le registre 1 Off:
-    - Vous ajouter une Nouvelle I/O ModbusTCP, et vous nommez la commande. Vous choisissez une commande de type Action, sous type Defaut.
-    - Choisir Fc5 Write Single Coil
-    - Registre de depart : 1
-    - Nb de bytes : 1
-    - Mettre 0 dans valeur a envoyer
+  - Vous ajouter une Nouvelle I/O ModbusTCP, et vous nommez la commande. Vous choisissez une commande de type Action, sous type Defaut.
+  - Choisir Fc5 Write Single Coil
+  - Registre de depart : 1
+  - Nb de bytes : 1
+  - Mettre 0 dans valeur a envoyer
 
 
 En agissant sur ces commandes action sur votre dashboard, vous enverrez donc True ou False à vos Coils.
@@ -142,8 +145,8 @@ En agissant sur ces commandes action sur votre dashboard, vous enverrez donc Tru
 
 Pour écrire sur un Holding Register :
 
-   - Vous ajouter une Nouvelle I/O ModbusTCP, et vous nommez la commande. Vous choisissez une commande de type Action, sous type Slider.
-   - Choisir Fc5 Write Single Register
-   - Choisir le format à envoyer au registre (cela modifiera le type de slider sur votre dashboard, suivant qu'il soit float ou long/integer)
-   - Choisir le pas du slider (pour les décimales, écrire avec un .   ex: 0.2)
-   - Choisir aussi une valeur Min et Max pour ce slider
+ - Vous ajouter une Nouvelle I/O ModbusTCP, et vous nommez la commande. Vous choisissez une commande de type Action, sous type Slider.
+ - Choisir Fc5 Write Single Register
+ - Choisir le format à envoyer au registre (cela modifiera le type de slider sur votre dashboard, suivant qu'il soit float ou long/integer)
+ - Choisir le pas du slider (pour les décimales, écrire avec un .   ex: 0.2)
+ - Choisir aussi une valeur Min et Max pour ce slider
