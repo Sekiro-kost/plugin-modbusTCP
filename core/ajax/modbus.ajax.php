@@ -31,7 +31,7 @@ try {
     ajax::init();
 
     if(init('action') == 'sendValues'){
-        modbus::sendValues( init('cmd_id'), init('id'), init('value') );
+        modbus::sendValues(init('functioncode'), init('cmd_id'), init('id'), init('value') );
         ajax::success();
 
 

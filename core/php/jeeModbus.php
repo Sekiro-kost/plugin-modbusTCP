@@ -57,7 +57,21 @@ if($result['FUNC'] == 'readF'){
                   if(is_object($cmdsearch)){
                       log::add('modbus','debug','CMDTOEVENT >>>>>>> ' .$cmdsearch->getName());
                       log::add('modbus','debug','VALUETOEVENT >>>>>>> ' .$value);
-                      $cmdsearch->event($value);
+                      if($cmdsearch->getSubType() != 'message'){
+                         $cmdsearch->event($value);
+                      }                     
+                      if($cmdsearch->getLogicalId() == 'ecriturebit'){ 
+                          $cmdToEv = cmd::byEqLogicIdAndLogicalId($eqLogicId, 'infobitbinary');
+                          if(is_object($cmdToEv)){
+                             $reg = $cmdsearch->getConfiguration('startregister');
+                             $cmdToEv->event(decbin($value));                            
+                             $cmdToEv->setName(__('READ_HOLDING_'.$reg, __FILE__));
+                             $cmdToEv->save();
+                           /*  message::add('modbus','LECTURE BINAIRE EFFECTUEE, VOUS POUVEZ ECRIRE VOS VALEURS', 'ev', 'eventbinary');
+                             message::removeAll(__CLASS__, 'eventbinary');*/
+                            
+                          }
+                      }
                  }
                }
             }
