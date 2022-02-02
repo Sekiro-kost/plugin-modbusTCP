@@ -175,39 +175,57 @@ class modbus extends eqLogic
             'action' => 'updateDeviceToGlobals'
         );
         foreach ($this->getCmd('info') as $cmd)
-        {
+        {         
+          if($cmd->getConfiguration('infobitbinary') == 'yes'){           
+            continue;
+          }
+            $startInfo = $cmd->getConfiguration('startregister');
+            $woInfo =  $cmd->getConfiguration('wordorder', 'bigword');
+            $boInfo =  $cmd->getConfiguration('byteorder', 'bigbyte');
+            $formatInfo =  $cmd->getConfiguration('formatIO');
             $offset = $cmd->getConfiguration('offset', 0);
-            $cmdsOptions[] = array(
-                'nameCmd' => $cmd->getName() ,
-                'cmdId' => $cmd->getId() ,
-                'format' => $cmd->getConfiguration('formatIO') ,
-                'functioncode' => $cmd->getConfiguration('choicefunctioncode') ,
-                'nbregister' => $cmd->getConfiguration('nbbytes') ,
-                'startregister' => $cmd->getConfiguration('startregister') ,
-                'wordorder' => $cmd->getConfiguration('wordorder') ,
-                'byteorder' => $cmd->getConfiguration('byteorder') ,
-                'isnegatif' => $cmd->getConfiguration('isnegatif', 0) ,
-                'offset' => $offset
-            );
-        }
+            $functionCodeinfo =  $cmd->getConfiguration('choicefunctioncode');
+            if($startInfo && $woInfo && $boInfo && $formatInfo){
 
+                  $offset = $cmd->getConfiguration('offset', 0);
+                  $cmdsOptions[] = array(
+                      'nameCmd' => $cmd->getName() ,
+                      'cmdId' => $cmd->getId() ,
+                      'format' => $formatInfo ,
+                      'functioncode' => $functionCodeinfo ,
+                      'nbregister' => $cmd->getConfiguration('nbbytes') ,
+                      'startregister' => $startInfo ,
+                      'wordorder' => $woInfo ,
+                      'byteorder' => $boInfo ,
+                      'isnegatif' => $cmd->getConfiguration('isnegatif', 0) ,
+                      'offset' => $offset
+                  );
+           }
+        }
         $cmdMessage = $this->getCmd('action', 'ecriturebit');
         if (is_object($cmdMessage))
-        {
+        {  
+            $start = $cmdMessage->getConfiguration('startregister');
+            $wo =  $cmdMessage->getConfiguration('wordorder');
+            $bo =  $cmdMessage->getConfiguration('byteorder');
+            $format =  $cmdMessage->getConfiguration('formatIO');
             $offset = $cmdMessage->getConfiguration('offset', 0);
-            $cmdsOptions[] = array(
+            if($start && $wo && $bo && $format){
+                 $cmdsOptions[] = array(
                 'cmdLogical' => 'ecriturebit',
                 'nameCmd' => $cmdMessage->getName() ,
                 'cmdId' => $cmdMessage->getId() ,
-                'format' => $cmdMessage->getConfiguration('formatIO') ,
-                'functioncode' => $cmdMessage->getConfiguration('choicefunctioncode') ,
-                'nbregister' => $cmdMessage->getConfiguration('nbbytes') ,
-                'startregister' => $cmdMessage->getConfiguration('startregister') ,
-                'wordorder' => $cmdMessage->getConfiguration('wordorder') ,
-                'byteorder' => $cmdMessage->getConfiguration('byteorder') ,
+                'format' => $format ,
+                'functioncode' => 'fc03' ,
+                'nbregister' => 1 ,
+                'startregister' => $start ,
+                'wordorder' => $wo ,
+                'byteorder' => $bo ,
                 'isnegatif' => $cmdMessage->getConfiguration('isnegatif', 0) ,
                 'offset' => $offset
-            );
+                 );
+              
+            }   
         }
 
         if ($this->getConfiguration('choicemodbus') == 'tcp')
@@ -284,7 +302,7 @@ class modbus extends eqLogic
     // Fonction exécutée automatiquement après la mise à jour de l'équipement
     public function postUpdate()
     {
-        /*  $this->creaCoils();*/
+
         $cmd = $this->getCmd(null, 'ecriturebit');
         if (!is_object($cmd))
         {
@@ -299,6 +317,7 @@ class modbus extends eqLogic
         $cmd->setDisplay('title_placeholder', 'Changement de Bit');
         $cmd->setDisplay('message_placeholder', 'ValeurBit&PositionBit');
         $cmd->setConfiguration('choicefunctioncode', 'fc03');
+        $cmd->setConfiguration('defCmd', '1');
         $cmd->setEqLogic_id($this->getId());
         $cmd->save();
 
@@ -318,7 +337,9 @@ class modbus extends eqLogic
         $cmd->setDisplay('message_placeholder', 'Valeurs des Coils a la suite');
         $cmd->setEqLogic_id($this->getId());
         $cmd->setConfiguration('choicefunctioncode', 'fc15');
+        $cmd->setConfiguration('defCmd', '2');
         $cmd->save();
+
 
         $cmd = $this->getCmd(null, 'infobitbinary');
         if (!is_object($cmd))
@@ -332,6 +353,8 @@ class modbus extends eqLogic
         $cmd->setType('info');
         $cmd->setSubType('string');
         $cmd->setEqLogic_id($this->getId());
+        $cmd->setConfiguration('defCmd', '3');
+        $cmd->setConfiguration('infobitbinary','yes');
         $cmd->save();
 
         $cmd = $this->getCmd(null, 'ecrituremultiRegisters');
@@ -347,6 +370,7 @@ class modbus extends eqLogic
         $cmd->setDisplay('title_placeholder', 'Ecriture Multi Registre');
         $cmd->setDisplay('message_placeholder', 'Valeur&NbRegistre|Valeur&NbRegistre');
         $cmd->setConfiguration('choicefunctioncode', 'fc16');
+        $cmd->setConfiguration('defCmd', '4');
         $cmd->setEqLogic_id($this->getId());
         $cmd->save();
     }
@@ -369,9 +393,7 @@ class modbus extends eqLogic
     // Fonction exécutée automatiquement après la sauvegarde (création ou mise à jour) de l'équipement
     public function postSave()
     {
-        /*   sleep(3);
-
-          self::deamon_start();*/
+ 
     }
 
     public function creaCoils()
@@ -389,16 +411,16 @@ class modbus extends eqLogic
                     continue;
                 }
 
-                $formatIO = $cmd->getConfiguration('formatIO', 0);
+                $formatIO = $cmd->getConfiguration('formatIO', 'bitsformat');
                 $offset = $cmd->getConfiguration('offset', 0);
                 $subtype = $cmd->getSubType();
-                $nbBytes = $cmd->getConfiguration('nbbytes');
-                $registre_depart = $cmd->getConfiguration('startregister');
-                $wordorder = $cmd->getConfiguration('wordorder', 0);
-                $byteorder = $cmd->getConfiguration('byteorder', 0);
+                $nbBytes = $cmd->getConfiguration('nbbytes','');
+                $registre_depart = $cmd->getConfiguration('startregister','');
+                $wordorder = $cmd->getConfiguration('wordorder', 'bigword');
+                $byteorder = $cmd->getConfiguration('byteorder', 'bigbyte');
                 $isnegatif = $cmd->getConfiguration('isnegatif', 0);
 
-                if ($nbBytes > 1)
+                if ($nbBytes >= 1 && $cmd->getConfiguration('alreadycreate') != 'yes')
                 {
                     for ($i = 0;$i < $nbBytes;$i++)
                     {
@@ -429,6 +451,7 @@ class modbus extends eqLogic
                         $newCmd->setConfiguration('startregister', $newAdresseValue);
                         $newCmd->setConfiguration('nbbytes', 1);
                         $newCmd->setConfiguration('offset', $offset);
+                        $newCmd->setConfiguration('alreadycreate', 'yes');
                         $cmd->remove();
                         $newCmd->save();
                     }
@@ -488,7 +511,7 @@ class modbus extends eqLogic
     {
 
     }
-
+/*
     public static function sendValues($functioncode, $cmdId, $eqId, $valCmd)
     {
         $eqLogic = eqLogic::byId(intval($eqId));
@@ -520,7 +543,7 @@ class modbus extends eqLogic
                         }
                     }
                     $nbregister = sizeof($arrayMultipleCoils);
-                } /*else if($functioncode == 'fc16'){
+                } else if($functioncode == 'fc16'){
                       $arrayMultipleRegisters  = explode(' ', $valCmd);
                       foreach ($arrayMultipleRegisters as $k => $v) {
                           list($val, $nbregister)   = explode('&', $v);
@@ -536,7 +559,7 @@ class modbus extends eqLogic
                               }
                        }
                     $arrayMultipleRegisters = $result;
-                    }*/
+                    }
                 else if ($functioncode == 'fc03')
                 {
                     $nbregister = 1;
@@ -596,7 +619,7 @@ class modbus extends eqLogic
             log::add('modbus', 'info', 'Exception reçue : ' . $e->getMessage());
             return false;
         }
-    }
+    }*/
 
     /*
      * Non obligatoire : permet de modifier l'affichage du widget (également utilisable par les commandes)

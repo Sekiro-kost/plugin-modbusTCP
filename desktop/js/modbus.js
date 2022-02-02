@@ -26,6 +26,40 @@ $("#table_cmd").sortable({
   forcePlaceholderSize: true
 });
 
+$("#table_cmd tbody").delegate(".cmdAttr[data-l2key=defCmd]", 'change', function (event) {
+  var cmdNb = $(this).value();
+  if (cmdNb == '4') {
+    $(this).closest('tr').find('.isnegatif').hide();
+    $(this).closest('tr').find('.choicefunctioncode').prop('disabled', 'disabled');
+  }
+  if (cmdNb == '1') {
+    $(this).closest('tr').find('.isnegatif').hide();
+    $(this).closest('tr').find('.choicefunctioncode').prop('disabled', 'disabled');
+    $(this).closest('tr').find('.wordorder').show();
+    $(this).closest('tr').find('.byteorder').show();
+    $(this).closest('tr').find('.nbbytes').val('1');
+    $(this).closest('tr').find('.nbbytes').prop('disabled', 'disabled');
+  }
+  if (cmdNb == '2') {
+    $(this).closest('tr').find('.isnegatif').hide();
+    $(this).closest('tr').find('.choicefunctioncode').prop('disabled', 'disabled');
+    $(this).closest('tr').find('.wordorder').hide();
+    $(this).closest('tr').find('.byteorder').hide();
+  }
+  if (cmdNb == '3') {
+    $(this).closest('tr').find('.isnegatif').hide();
+    $(this).closest('tr').find('.choicefunctioncode').hide();
+    $(this).closest('tr').find('.offset').hide();
+    $(this).closest('tr').find('.stepchoice').hide();
+    $(this).closest('tr').find('.formatIO').hide();
+    $(this).closest('tr').find('.wordorder').hide();
+    $(this).closest('tr').find('.byteorder').hide();
+    $(this).closest('tr').find('.nbbytes').hide();
+    $(this).closest('tr').find('.startregister').hide();
+    $(this).closest('tr').find('.valeurToAction').hide();
+  }
+});
+
 $("#table_cmd tbody").delegate(".cmdAttr[data-l1key=type]", 'change', function (event) {
    $(this).closest('tr').find('.choicefunctioncode').val('');
    $(this).closest('tr').find('.sendValues').hide();
@@ -43,6 +77,10 @@ $("#table_cmd tbody").delegate(".cmdAttr[data-l1key=type]", 'change', function (
      $(this).closest('tr').find('.valeurToAction').show();
      $(this).closest('tr').find('.request').show();
    }
+
+  //var testing = $(this).closest('tr').find('.defCmd').value();
+  //console.log(testing);
+
 });
 
 
@@ -50,8 +88,8 @@ $("#table_cmd tbody").delegate(".cmdAttr[data-l1key=subType]", 'change', functio
   var subType = $(this).value();
     if (subType == 'message') {
        $(this).closest('tr').find('.readOption').show();
-      
-      
+
+
     }
   });
 
@@ -102,8 +140,8 @@ $("#table_cmd tbody").delegate(".cmdAttr[data-l1key=configuration][data-l2key=ch
      $(this).closest('tr').find('.isnegatif').hide();
      $(this).closest('tr').find('.formatIO').hide();
      $(this).closest('tr').find('.valeurToAction').hide();
-     $(this).closest('tr').find('.stepchoice').hide(); 
-	 $(this).closest('tr').find('.sendValues').hide();
+     $(this).closest('tr').find('.stepchoice').hide();
+	   $(this).closest('tr').find('.sendValues').hide();
      $(this).closest('tr').find('.isVisible').show();
      $(this).closest('tr').find('.nbbytes').show();
      $(this).closest('tr').find('.isVisible').prop('checked', true);
@@ -115,13 +153,13 @@ $("#table_cmd tbody").delegate(".cmdAttr[data-l1key=configuration][data-l2key=ch
      $(this).closest('tr').find('.isnegatif').hide();
      $(this).closest('tr').find('.formatIO').hide();
      $(this).closest('tr').find('.valeurToAction').hide();
-     $(this).closest('tr').find('.stepchoice').hide(); 
-	 $(this).closest('tr').find('.sendValues').hide();
+     $(this).closest('tr').find('.stepchoice').hide();
+	   $(this).closest('tr').find('.sendValues').hide();
      $(this).closest('tr').find('.isVisible').show();
      $(this).closest('tr').find('.nbbytes').show();
      $(this).closest('tr').find('.isVisible').prop('checked', true);
   }
-  
+
   if(fctCode == 'fc03'){
      $(this).closest('tr').find('.wordorder').show();
      $(this).closest('tr').find('.byteorder').show();
@@ -130,12 +168,12 @@ $("#table_cmd tbody").delegate(".cmdAttr[data-l1key=configuration][data-l2key=ch
      $(this).closest('tr').find('.bitsformat').hide();
      $(this).closest('tr').find('.valeurToAction').hide();
      $(this).closest('tr').find('.stepchoice').hide();
-	 $(this).closest('tr').find('.sendValues').show();
+	   $(this).closest('tr').find('.sendValues').show();
      $(this).closest('tr').find('.isVisible').show();
      $(this).closest('tr').find('.nbbytes').show();
      $(this).closest('tr').find('.isVisible').prop('checked', true);
   }
-  
+
   if(fctCode == 'fc04'){
      $(this).closest('tr').find('.wordorder').show();
      $(this).closest('tr').find('.byteorder').show();
@@ -144,12 +182,12 @@ $("#table_cmd tbody").delegate(".cmdAttr[data-l1key=configuration][data-l2key=ch
      $(this).closest('tr').find('.bitsformat').hide();
      $(this).closest('tr').find('.valeurToAction').hide();
      $(this).closest('tr').find('.stepchoice').hide();
-	 $(this).closest('tr').find('.sendValues').hide();
+	   $(this).closest('tr').find('.sendValues').hide();
      $(this).closest('tr').find('.isVisible').show();
      $(this).closest('tr').find('.nbbytes').show();
      $(this).closest('tr').find('.isVisible').prop('checked', true);
   }
-  
+
   if(fctCode == 'fc05'){
      $(this).closest('tr').find('.wordorder').hide();
      $(this).closest('tr').find('.byteorder').hide();
@@ -157,12 +195,12 @@ $("#table_cmd tbody").delegate(".cmdAttr[data-l1key=configuration][data-l2key=ch
      $(this).closest('tr').find('.formatIO').hide();
      $(this).closest('tr').find('.valeurToAction').show();
      $(this).closest('tr').find('.stepchoice').hide();
-	 $(this).closest('tr').find('.sendValues').hide();
+	   $(this).closest('tr').find('.sendValues').hide();
      $(this).closest('tr').find('.isVisible').show();
      $(this).closest('tr').find('.nbbytes').hide();
      $(this).closest('tr').find('.isVisible').prop('checked', true);
   }
-  
+
   if(fctCode == 'fc06'){
      $(this).closest('tr').find('.wordorder').show();
      $(this).closest('tr').find('.byteorder').show();
@@ -171,12 +209,12 @@ $("#table_cmd tbody").delegate(".cmdAttr[data-l1key=configuration][data-l2key=ch
      $(this).closest('tr').find('.bitsformat').hide();
      $(this).closest('tr').find('.valeurToAction').hide();
     /* $(this).closest('tr').find('.stepchoice').hide();*/
-	 $(this).closest('tr').find('.sendValues').hide();
+	   $(this).closest('tr').find('.sendValues').hide();
      $(this).closest('tr').find('.isVisible').show();
      $(this).closest('tr').find('.nbbytes').hide();
      $(this).closest('tr').find('.isVisible').prop('checked', true);
   }
-  
+
   if(fctCode == 'fc15'){
      $(this).closest('tr').find('.wordorder').hide();
      $(this).closest('tr').find('.byteorder').hide();
@@ -189,7 +227,7 @@ $("#table_cmd tbody").delegate(".cmdAttr[data-l1key=configuration][data-l2key=ch
      $(this).closest('tr').find('.nbbytes').hide();
      $(this).closest('tr').find('.isVisible').prop('checked', false);
   }
-  
+
   if(fctCode == 'fc16'){
      $(this).closest('tr').find('.wordorder').show();
      $(this).closest('tr').find('.byteorder').show();
@@ -203,7 +241,7 @@ $("#table_cmd tbody").delegate(".cmdAttr[data-l1key=configuration][data-l2key=ch
      $(this).closest('tr').find('.nbbytes').hide();
      $(this).closest('tr').find('.isVisible').prop('checked', false);
   }
-  
+
 });
    /*if(fctCode == 'fc01' || fctCode == 'fc02' || fctCode == 'fc05' || fctCode == 'fc15'){
      $(this).closest('tr').find('.formatIO').hide();
@@ -304,6 +342,7 @@ function addCmdToTable(_cmd) {
    tr += '<div class="row">';
    tr += '<div class="col-xs-7">';
    tr += '<input class="cmdAttr form-control input-sm" data-l1key="name" placeholder="{{Nom de la commande}}">';
+   tr += '<input class="cmdAttr form-control input-sm defCmd" data-l1key="configuration" data-l2key="defCmd" style="display : none;" placeholder="{{defCmd}}">';
    tr += '<select class="cmdAttr form-control input-sm" data-l1key="value" style="display : none;margin-top : 5px;" title="{{Commande information liée}}">';
    tr += '<option value="">{{Aucune}}</option>';
    tr += '</select>';
@@ -325,7 +364,7 @@ function addCmdToTable(_cmd) {
    tr += '</td>';
    tr += '<td>';
    tr += '<label class="checkbox isnegatif"><input type="checkbox" class="cmdAttr isnegatif" data-l1key="configuration" data-l2key="isnegatif">{{Valeur negative}}</label>';
-   tr += '<label class="checkbox"><input type="checkbox" class="cmdAttr" data-l1key="configuration" data-l2key="offset">{{Offset}}</label>';
+   tr += '<label class="checkbox offset"><input type="checkbox" class="cmdAttr offset" data-l1key="configuration" data-l2key="offset">{{Offset}}</label>';
    tr += '<input class="cmdAttr form-control tooltips input-sm stepchoice" data-l1key="configuration" data-l2key="stepchoice" placeholder="{{Choisir le pas du slider (0.1, 0.5 etc..)}}" style="width:100%;"/>';
    tr += '</td>';
    tr += '<td>';
@@ -357,7 +396,7 @@ function addCmdToTable(_cmd) {
    tr += '<option value="littlebyte">{{Little First}}</option>';
    tr += '<option value="bigbyte">{{Big First}}</option>';
    tr += '</select>';
-   tr += '<input class="cmdAttr form-control tooltips input-sm" data-l1key="configuration" data-l2key="startregister" placeholder="{{Registre départ}}" style="width:100%;"/>';
+   tr += '<input class="cmdAttr form-control tooltips input-sm startregister" data-l1key="configuration" data-l2key="startregister" placeholder="{{Registre départ}}" style="width:100%;"/>';
    tr += '<input class="cmdAttr form-control tooltips input-sm nbbytes" data-l1key="configuration" data-l2key="nbbytes" placeholder="{{Nb de bytes}}" style="width:100%"/>';
 
    tr += '<input type="number" class="cmdAttr form-control tooltips input-sm valeurToAction" data-l1key="configuration" data-l2key="valeurToAction" placeholder="{{Valeur à envoyer pour WriteCoil (0 ou 1)}}" style="width:100%; display: inline-block;"/>';
@@ -374,7 +413,7 @@ function addCmdToTable(_cmd) {
 
      tr += '<a class="btn btn-default btn-xs cmdAction" data-action="configure"><i class="fas fa-cogs"></i></a> ';
      tr += '<a class="btn btn-default btn-xs cmdAction" data-action="test"><i class="fas fa-rss"></i> Tester</a>';
-     tr += '<a class="btn btn-primary btn-xs cmdAction sendValues" data-action="sendValues">{{Envoyer Valeurs}}</a>';
+   /*  tr += '<a class="btn btn-primary btn-xs cmdAction sendValues" data-action="sendValues">{{Envoyer Valeurs}}</a>';*/
    }
    tr += '<i class="fas fa-minus-circle pull-right cmdAction cursor" data-action="remove"></i></td>';
    tr += '</tr>';
@@ -397,7 +436,7 @@ function addCmdToTable(_cmd) {
    });
 
 
-
+/*
    $('.cmdAction[data-action=sendValues]').off().on('click', function() {
        console.log('dada');
          var sendValue = '';
@@ -506,7 +545,7 @@ function addCmdToTable(_cmd) {
 
 
 
-   })
+   })*/
 
 
 
