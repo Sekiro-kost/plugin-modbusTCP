@@ -13,7 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with Jeedom. If not, see <http://www.gnu.org/licenses/>.
 
+import globals
+from queue import Queue
 import logging
+import bitstring
 import string
 import sys
 import os
@@ -26,13 +29,21 @@ import argparse
 from os.path import join
 import json
 import pymodbus
+from codecs import decode
 from pymodbus.client.sync import ModbusTcpClient
 from pymodbus.client.sync import ModbusSerialClient as ModbusClient
 from pymodbus.constants import Defaults
 from pymodbus.exceptions import *
 from pymodbus.utilities import hexlify_packets, ModbusTransactionState
-#from struct import *
+from pymodbus.payload import BinaryPayloadBuilder
+from pymodbus.payload import BinaryPayloadDecoder
+from pymodbus.constants import Endian
+from pymodbus.compat import iteritems
 import struct
+import serial
+from pymodbus.pdu import ModbusRequest
+from pymodbus.transaction import ModbusRtuFramer
+from threading import Thread, Lock
 
 
 try:
@@ -47,103 +58,268 @@ except ImportError:
 	print("Error: importing module ModbusDep")
 	sys.exit(1)
 
+#def convert_from_bcd(bcd):
+	#place, decimal = 1, 0
+	#while bcd > 0:
+	    #nibble = bcd & 0xf
+	    #decimal += nibble * place
+	    #bcd >>= 4
+	    #place *= 10
+	#return decimal
 
-
-def testWrite(ipDevice, typeInput, values, nbByte, startRegister):
-    client = ModbusTcpClient(ipDevice)
-    if typeInput == 'coils':
-        if len(values) > 1:
-            stringValues = ','.join(values)
-            valueDef = list(eval(stringValues))
-            client.write_coils(int(startRegister)-1, valueDef)
-        elif len(values) == 1:
-            stringValues = ''.join(values)
-            testVal = eval(stringValues)
-            client.write_coil(int(startRegister)-1, testVal)
-    elif typeInput == 'holdings':
-        if len(values) > 1:
-            values = list(map(int, values))
-            client.write_registers(int(startRegister)-1, values)
-        elif len(values) == 1:
-            stringValue = ''.join(values)
-            intval = int(stringValue)
-            client.write_register(int(startRegister)-1, intval)
-    client.close()
-
-
-def writeFunction(ipDevice, options):
-    client = ModbusTcpClient(ipDevice)
-    if options['typeIO'] == 'coils':
-        if int(options['value']) == 0:
-            client.write_coil(int(options['startregister'])-1, False)
-        elif int(options['value']) == 1:
-            client.write_coil(int(options['startregister'])-1, True)
-    elif options['typeIO'] == 'holdingRegisters':
-        client.write_register(int(options['startregister'])-1, int(options['value']))
-
-def testAllCmds(ipDevice, registerParams):
-	client = ModbusTcpClient(ipDevice)
+def writeFunc(deviceInfo, unitID, typeDevice, registerParams):
+	logging.debug(registerParams)
+	offset = int(registerParams['offset'])
 	results = {}
-	results['FUNC'] = 'allCmds'
-	results['ipdevice'] = ipDevice
-	results['coils'] = {}
-	for x in registerParams:
-	    x['dataResult'] = {}
-	    y = range(int(x['nbregister']))
-	    logging.debug(x)
-	    if x['typeIO'] == 'coils':
-	        if x['functioncode'] == 'fc01':
-	            logging.debug("TRAITEMENT COMMANDE : " + x['nameCmd'])
-	            result = client.read_coils(int(x['startregister']) - 1, int(x['nbregister']))
-	            results['coils'][x['nameCmd']] = []
-	            for Byte in y:
-	                parsedByte = result.bits[Byte]
-	                logging.debug(parsedByte)
-	                if (parsedByte == True):
-	                    valTransf = 1
-	                elif (parsedByte == False):
-	                    valTransf = 0
-	                arrayBits = {'StartRegister': int(x['startregister']), 'Byte': Byte, 'valueConverse' : valTransf, 'CmdId' : x['cmdId'], 'formatForConversion' :x['format']}
-	                results['coils'][x['nameCmd']].append(arrayBits)
-	                logging.debug('plop')
-	        elif x['functioncode'] != 'fc05' or x['functioncode'] != 'fc15' or x['functioncode'] != 'fc01':
-	            logging.debug("ERREUR FUNCTION CODE DE LA COMMMANDE : " + x['nameCmd'] + " >>  MAUVAIS CODE FONCTION SELECTIONNE, LECTEUR SEULE PERMISE")
-	    elif x['typeIO'] == 'inputRegisters':
-	        if x['functioncode'] == 'fc04':
-	            logging.debug("TRAITEMENT COMMANDE : " + x['nameCmd'])
-	            result = client.read_input_registers(int(x['startregister'] ) -1, int(x['nbregister']))
-	            results['inputRegisters'] = {}
-	            results['inputRegisters'][x['nameCmd']] = []
-	            hexValue = ''
-	            for Byte in y:
-	                logging.debug(result.registers[int(Byte)])
-	                value = result.registers[int(Byte)]
-	                hexValue += hex(value)[2:]
-	            if x['format'] == 'floatformat':
-	                logging.debug('coucou')
-	                logging.debug(hexValue)
-	                floatValue = struct.unpack('!f', bytes.fromhex(hexValue))[0]
-	                arrayBits = {'StartRegister': int(x['startregister']),'Byte': Byte, 'valueConverse' : floatValue, 'CmdId' : x['cmdId']}
-	                results['inputRegisters'][x['nameCmd']].append(arrayBits)
-	        else :
-	            logging.debug("ERREUR FUNCTION CODE DE LA COMMMANDE : " + x['nameCmd'] + " >>  MAUVAIS CODE FONCTION SELECTIONNE, LECTEUR SEULE PERMISE")
-	    elif x['typeIO'] == 'holdingRegisters':
-	        if x['functioncode'] != 'fc03' or x['functioncode'] != 'fc06' or x['functioncode'] != 'fc16':
-	            logging.debug("ERREUR FUNCTION CODE DE LA COMMMANDE : " + x['nameCmd'] + " >>  MAUVAIS CODE FONCTION SELECTIONNE. CHOISIR FC3,FC6 ou FC16")
-	        elif x['functioncode'] == 'fc03':
-	            logging.debug("TRAITEMENT COMMANDE : " + x['nameCmd'])
-	            result = client.read_holding_registers(int(x['startregister']), int(x['nbregister']))
-	            for byte in y:
-	                logging.debug(result.registers[byte])
-	        elif x['functioncode'] == 'fc06':
-	            logging.debug("TRAITEMENT COMMANDE : " + x['nameCmd'])
-	            result = client.write_register(int(x['startregister']), int(x['nbregister']))
-	        elif x['functioncode'] == 'fc16':
-	            logging.debug("TRAITEMENT COMMANDE : " + x['nameCmd'])
-	            result = client.write_registers(int(x['startregister']), int(x['nbregister']))
-	    else:
-	        logging.debug('INPUTREGISTER')
+	results['FUNC'] = 'write'
+	results['isOk'] = 'yes'
+	if typeDevice == 'tcp':
+	    varUnitID = 1
+	    try:
+	        client = ModbusTcpClient(deviceInfo['ipDevice'])
+	    except Exception as e:
+	        logging.error("Erreur Connexion au Client : " + str(e))
+	        results['isOk'] = 'no'
+	elif typeDevice == 'rtu':
+	    varUnitID = int(unitID)
+	    varPortSerial = str(deviceInfo['portserial'])
+	    varByteSize = int(deviceInfo['bytesize'])
+	    varBaudrate = int(deviceInfo['baudrate'])
+	    varParity = str(deviceInfo['parity'])
+	    varStopBits = int(deviceInfo['stopbits'])
+	    try:
+	         client = ModbusClient(method = 'rtu', port=varPortSerial, bytesize = varByteSize, baudrate = varBaudrate, parity = varParity, stopbits = varStopBits, timeout=3, strict=False)
+	    except Exception as e:
+	        logging.error("Erreur Connexion au Client : " + str(e))
+	        results['isOk'] = 'no'
+	builder = ''
+	if registerParams['wordorder'] == 'bigword' and registerParams['byteorder'] == 'bigbyte':
+	    builder = BinaryPayloadBuilder(byteorder=Endian.Big, wordorder=Endian.Big)
+	elif registerParams['wordorder'] == 'bigword' and registerParams['byteorder'] == 'littlebyte':
+	    builder = BinaryPayloadBuilder(byteorder=Endian.Big, wordorder=Endian.Big)
+	elif registerParams['wordorder'] == 'littleword' and registerParams['byteorder'] == 'bigbyte':
+	    builder = BinaryPayloadBuilder(byteorder=Endian.Big, wordorder=Endian.Big)
+	elif registerParams['wordorder'] == 'littleword' and registerParams['byteorder'] == 'littlebyte':
+	    builder = BinaryPayloadBuilder(byteorder=Endian.Big, wordorder=Endian.Big)
+	count = registerParams['nbregister']
+	if registerParams['functioncode'] == 'fc05':
+	    try	:
+	        client.write_coil(int(registerParams['startregister']) - offset, int(registerParams['value']), unit=varUnitID)
+	    except Exception as e:
+	        logging.error("Erreur Connexion au Client : " + str(e))
+	        results['isOk'] = 'no'
+	elif registerParams['functioncode'] == 'fc06':
+	    if registerParams['format'] == 'floatformat':
+	        if int(registerParams['nbregister']) == 1:
+	            builder.add_16bit_float(float(registerParams['value']))
+	        elif int(registerParams['nbregister']) == 2:
+	            builder.add_32bit_float(float(registerParams['value']))
+	        elif int(registerParams['nbregister']) == 4:
+	            builder.add_64bit_float(float(registerParams['value']))
+	    elif registerParams['format'] == 'longformat':
+	        if int(registerParams['nbregister']) == 1:
+	            if int(registerParams['isnegatif']) == 0:
+	                logging.debug('WRITE333')
+	                builder.add_16bit_uint(int(registerParams['value']))
+	            else:
+	                builder.add_16bit_int(hex(registerParams['value']))
+	        elif int(registerParams['nbregister']) == 2:
+	            if int(registerParams['isnegatif']) == 0:
+	                builder.add_32bit_uint(int(registerParams['value']))
+	            else:
+	                builder.add_32bit_int(hex(registerParams['value']))
+	        elif int(registerParams['nbregister']) == 4:
+	            if int(registerParams['isnegatif']) == 0:
+	                builder.add_64bit_uint(hex(registerParams['value']))
+	            else:
+	                builder.add_64bit_int(hex(registerParams['value']))
+	    payload = builder.build()       
+	    logging.debug(payload)
+	    try	:
+	        client.write_registers(int(registerParams['startregister']) - offset , payload, skip_encode=True, unit=varUnitID)
+	    except Exception as e:
+	        logging.error("Erreur Connexion au Client : " + str(e))
+	        results['isOk'] = 'no'
+	elif registerParams['functioncode'] == 'fc15':
+	    try:
+	        client.write_coils(int(registerParams['startregister']) - offset, registerParams['valuesrequest'], unit=varUnitID)
+	    except Exception as e:
+	        logging.error("Erreur Connextion au client : " + str(e))
+	        results['isOk'] = 'no'
+	elif registerParams['functioncode'] == 'fc16':
+	    for x in registerParams['valuesrequest']:
+	        logging.debug(x)
+	        logging.debug(x['valeur'])            
+	        if x['valeur'].find('.') != -1:
+	            if x['nbregister'] == '1':
+	                builder.add_16bit_float(float(x['valeur']))
+	            elif x['nbregister'] == '2':
+	                builder.add_32bit_float(float(x['valeur']))
+	            elif x['nbregister'] == '4':
+	                builder.add_64bit_float(float(x['valeur']))
+	            else:
+	                return                  
+	        else:             
+	            if x['nbregister'] == '1':
+	                if int(x['valeur']) < 0:                 
+	                    builder.add_16bit_int(int(x['valeur']))
+	                elif 0 <= int(x['valeur']) <= 65535:
+	                    logging.debug('TESTTTTT')
+	                    logging.debug(x['valeur'])                        
+	                    builder.add_16bit_uint(int(x['valeur']))
+	                elif int(x['valeur']) > 65535:
+	                    return                      
+	            elif x['nbregister'] == '2':
+	                if int(x['valeur']) < 0: 
+	                    logging.debug('NEGATIF')                      
+	                    builder.add_32bit_int(int(x['valeur']))
+	                elif int(x['valeur']) > 0:
+	                    logging.debug('POSITIF')                      
+	                    builder.add_32bit_uint(int(x['valeur'])) 
+	            elif x['nbregister'] == '4':
+	                if int(x['valeur']) < 0:      
+	                    builder.add_64bit_int(int(x['valeur']))
+	                elif int(x['valeur']) > 0:
+	                    builder.add_64bit_uint(int(x['valeur']))
+	            else:
+	                return
+	    registers = builder.to_registers()                
+	    #payload = builder.to_registers()
+	    #payload = builder.build()
+	    #logging.debug(payload)
+	    try	:
+	        #client.write_registers(int(registerParams['startregister']) - offset, payload, skip_encode=True, unit=varUnitID)
+	        client.write_registers(int(registerParams['startregister']) - offset, registers, unit=varUnitID)            
+	    except Exception as e:
+	        logging.error("Erreur Ecriture : " + str(e))
+	        results['isOk'] = 'no'
+	client.close()
 	return results
+
+
+def readDevices():
+	if len(globals.DEVICES) == 0:
+	    logging.debug('!!!!!   AUCUN EQUIPEMENT EXISTANT    !!!!!!')
+	    return
+	results = {}
+	results['data'] = {}
+	results['FUNC'] = 'readF'
+	for device in globals.DEVICES:
+		results['data'][device]= {}
+		logging.debug(results)
+		if(globals.DEVICES[device]['typeDevice'] == 'rtu'):
+		    try:
+		        varPortSerial = str(globals.DEVICES[device]['portserial'])
+		        varByteSize = int(globals.DEVICES[device]['bytesize'])
+		        varBaudrate = int(globals.DEVICES[device]['baudrate'])
+		        varParity = str(globals.DEVICES[device]['parity'])
+		        varUnitID = int(globals.DEVICES[device]['unitID'])
+		        varStopBits = int(globals.DEVICES[device]['stopbits'])
+		        client = ModbusClient(method = 'rtu', port=varPortSerial, bytesize = varByteSize, baudrate = varBaudrate, parity = varParity, stopbits = varStopBits, timeout=3, strict=False)
+		        conn = client.connect()
+		        logging.debug(conn) # True
+		    except Exception as e:
+		        logging.error("Erreur Connexion au Client : " + str(e))
+		        #logging.error('coucou')
+		        continue
+		elif(globals.DEVICES[device]['typeDevice'] == 'tcp'):
+		    try:
+		        client = ModbusTcpClient(globals.DEVICES[device]['ipDevice'])
+		        varUnitID = 1
+		    except Exception as e:
+		        logging.error("Erreur Connexion au Client : " + str(e))
+		        continue
+		for infoCmd in globals.DEVICES[device]['registerParams']:
+			logging.debug(infoCmd)
+			offset = int(infoCmd['offset'])
+			results['data'][device][infoCmd['nameCmd']] = []
+			if infoCmd['functioncode'] == 'fc01':
+			    try:
+			        result = client.read_coils(int(infoCmd['startregister'])-offset, int(infoCmd['nbregister']),  unit=varUnitID)
+			    except Exception as e:
+			        logging.error("Erreur MODBUS : " + str(e))
+			    payload = []
+			    for y in range(int(infoCmd['nbregister'])):
+			        parsedByte = result.bits[y]
+			        if (parsedByte == True):
+			            valTransf = 1
+			        elif (parsedByte == False):
+			            valTransf = 0
+			        payload.append(parsedByte)
+			        arrayBits = {'StartRegister': int(infoCmd['startregister']), 'CmdId' : infoCmd['cmdId'], 'value' : valTransf}
+			        results['data'][device][infoCmd['nameCmd']].append(arrayBits)
+			elif infoCmd['functioncode'] == 'fc02':
+			    try:
+			        result = client.read_discrete_inputs(int(infoCmd['startregister'])- offset, int(infoCmd['nbregister']),  unit=varUnitID)
+			    except Exception as e:
+			        logging.error("Erreur MODBUS : " + str(e))
+			    payload = []
+			    for y in range(int(infoCmd['nbregister'])):
+			        parsedByte = result.bits[y]
+			        if (parsedByte == True):
+			            valTransf = 1
+			        elif (parsedByte == False):
+			            valTransf = 0
+			        payload.append(parsedByte)
+			        arrayBits = {'StartRegister': int(infoCmd['startregister']), 'CmdId' : infoCmd['cmdId'], 'value' : valTransf}
+			        results['data'][device][infoCmd['nameCmd']].append(arrayBits)
+			elif infoCmd['functioncode'] == 'fc03':
+			    result = client.read_holding_registers(int(infoCmd['startregister'])- offset, int(infoCmd['nbregister']), unit=varUnitID)
+			elif infoCmd['functioncode'] == 'fc04':
+			    result = client.read_input_registers(int(infoCmd['startregister'])- offset, int(infoCmd['nbregister']),  unit=varUnitID)
+			if infoCmd['functioncode'] == 'fc04' or infoCmd['functioncode'] == 'fc03':
+			    if infoCmd['wordorder'] == 'bigword' and infoCmd['byteorder'] == 'bigbyte':
+			        decoder = BinaryPayloadDecoder.fromRegisters(result.registers,byteorder=Endian.Big,wordorder=Endian.Big)
+			    elif infoCmd['wordorder'] == 'bigword' and infoCmd['byteorder'] == 'littlebyte':
+			        decoder = BinaryPayloadDecoder.fromRegisters(result.registers,byteorder=Endian.Little,wordorder=Endian.Big)
+			    elif infoCmd['wordorder'] == 'littleword' and infoCmd['byteorder'] == 'bigbyte':
+			        decoder = BinaryPayloadDecoder.fromRegisters(result.registers,byteorder=Endian.Big,wordorder=Endian.Little)
+			    elif infoCmd['wordorder'] == 'littleword' and infoCmd['byteorder'] == 'littlebyte':
+			        decoder = BinaryPayloadDecoder.fromRegisters(result.registers,byteorder=Endian.Little,wordorder=Endian.Little)
+			    if infoCmd['format'] == 'floatformat':
+			            if int(infoCmd['nbregister']) == 2:
+			                decoded = {'float': decoder.decode_32bit_float()}
+			            elif int(infoCmd['nbregister']) == 1:
+			                decoded = {'float': decoder.decode_16bit_float()}
+			            elif int(infoCmd['nbregister']) == 4:
+			                decoded = {'float': decoder.decode_64bit_float()}
+			            else :
+			                logging.debug('NOMBRE REGISTRE INVALIDE POUR FLOAT : 1,2 ou 4 registres')
+			                return
+			            for name, value in iteritems(decoded):
+			                arrayBits = {'StartRegister': int(infoCmd['startregister']), 'CmdId' : infoCmd['cmdId'], 'value' : value}
+			                results['data'][device][infoCmd['nameCmd']].append(arrayBits)
+			    elif infoCmd['format'] == 'longformat':
+			        if int(infoCmd['isnegatif']) == 0:
+			            if int(infoCmd['nbregister']) < 1:
+			                decoded = {'int':decoder.decode_8bit_uint()}
+			            elif int(infoCmd['nbregister']) == 1:
+			                decoded = {'int':decoder.decode_16bit_uint()}
+			            elif int(infoCmd['nbregister']) == 2:
+			                decoded = {'int':decoder.decode_32bit_uint()}
+			            elif int(infoCmd['nbregister']) == 4:
+			                decoded = {'int':decoder.decode_64bit_uint()}
+			        elif int(infoCmd['isnegatif']) == 1:
+			            if int(infoCmd['nbregister']) < 1:
+			                decoded = {'int':decoder.decode_8bit_int()}
+			            elif int(infoCmd['nbregister']) == 1:
+			                decoded = {'int':decoder.decode_16bit_int()}
+			            elif int(infoCmd['nbregister']) == 2:
+			                decoded = {'int':decoder.decode_32bit_int()}
+			            elif int(infoCmd['nbregister'])== 4:
+			                decoded = {'int':decoder.decode_64bit_int()}
+			        #logging.debug(decoded)
+			        for name, value in iteritems(decoded):
+			            arrayBits = {'StartRegister': int(infoCmd['startregister']), 'CmdId' : infoCmd['cmdId'], 'value' : value}
+			            results['data'][device][infoCmd['nameCmd']].append(arrayBits)
+			    #elif infoCmd['format'] == 'bitsformat':
+			        #decoded = {'bits':decoder.decode_bits()}
+			#elif infoCmd['functioncode'] == 'fc01':
+			        #decoder = BinaryPayloadDecoder.fromCoils(payload)
+	time.sleep(int(globals.TIMESLEEP))
+	jeedom_com.send_change_immediate(results)
+	client.close()
+
 
 
 def read_socket():
@@ -156,25 +332,15 @@ def read_socket():
 			logging.error("Invalid apikey from socket : " + str(message))
 			return
 		try:
-			if message['action'] == 'read':
-			    ret = testRead(message['eqlogicid'], message['cmdId'], message['ipDevice'], message['typeOfCmd'], message['nbByte'],message['adresse'])
-			    logging.debug("MESSAGE ENVOYE ACTION READ")
-			    jeedom_com.send_change_immediate(ret)
-			elif message['action'] == 'writeAction':
-			    #testWrite(message['ipDevice'], message['typeOfCmd'],message['values'], message['registers'], message['startRegister'])
-			    writeFunction(message['ipDevice'], message['options'])
+			if message['action'] == 'writeAction':
+			    ret = writeFunc(message['deviceInfo'], message['unitID'], message['typeDevice'], message['options'])
 			    logging.debug("MESSAGE ENVOYE ACTION WRITE")
-			elif message['action'] == 'readCron':
-			    ret = testReadCron(message['eqlogicid'], message['data'], message['ipDevice'])
 			    jeedom_com.send_change_immediate(ret)
-			elif message['action'] == 'readCronEssai':
-			    ret = testReadEssai(message['eqlogicid'], message['adresse'], message['nbbyte'], message['ipDevice'])
-			    jeedom_com.send_change_immediate(ret)
-			elif message['action'] == 'newCmds':
-			    ret = testAllCmds(message['modbusDevice']['ipDevice'], message['modbusDevice']['registerParams'])
-			    jeedom_com.send_change_immediate(ret)
-			#logging.debug(ret)
-			#jeedom_com.send_change_immediate(ret)
+			elif message['action'] == 'updateDeviceToGlobals':
+			    logging.debug("ADD DEVICE TO GLOBALS :"+str(message['deviceInfo']))
+			    globals.DEVICES[message['deviceInfo']['id']] = message['deviceInfo']
+			elif message['action'] == 'deleteDevice':
+			    del globals.DEVICES[message['deviceInfo']['id']]
 		except Exception as e:
 			logging.error('Send command to demon error : '+str(e))
 
@@ -186,7 +352,21 @@ def listen():
 	try:
 		while 1:
 			time.sleep(0.5)
-			read_socket()
+			now = datetime.datetime.utcnow()
+			try:
+			    read_socket()
+			except Exception as e:
+			    logging.error("Exception on socket : " + str(e))
+			try:
+			    if now < (globals.LAST_TIME_READ+datetime.timedelta(milliseconds=globals.TIMESLEEP)):
+			        continue
+			    else:
+			        globals.LAST_TIME_READ = now
+			#tp.start()
+			        if len(globals.DEVICES) != 0:
+			            readDevices()
+			except Exception as e:
+			    logging.error("Exception on read device : " + str(e))
 	except KeyboardInterrupt:
 		shutdown()
 
@@ -230,6 +410,7 @@ _callback = ''
 parser = argparse.ArgumentParser(description='Modbus Daemon for Jeedom plugin')
 parser.add_argument("--device", help="Device", type=str)
 parser.add_argument("--socketport", help="Socketport for server", type=str)
+parser.add_argument("--timesleep", help="Time Sleep", type=str)
 parser.add_argument("--sockethost", help="Sockethost for server", type=str)
 parser.add_argument("--loglevel", help="Log Level for the daemon", type=str)
 parser.add_argument("--callback", help="Callback", type=str)
@@ -245,6 +426,8 @@ if args.sockethost:
     _socket_host = args.sockethost
 if args.loglevel:
     _log_level = args.loglevel
+if args.timesleep:
+    globals.TIMESLEEP = int(args.timesleep)
 if args.callback:
     _callback = args.callback
 if args.apikey:
@@ -263,6 +446,7 @@ logging.info('Socket host : '+str(_socket_host))
 logging.info('PID file : '+str(_pidfile))
 logging.info('Apikey : '+str(_apikey))
 logging.info('Device : '+str(_device))
+logging.info('TimeSleep : '+str(globals.TIMESLEEP))
 
 signal.signal(signal.SIGINT, handler)
 signal.signal(signal.SIGTERM, handler)
@@ -270,8 +454,11 @@ signal.signal(signal.SIGTERM, handler)
 
 try:
 	jeedom_utils.write_pid(str(_pidfile))
-	jeedom_socket = jeedom_socket(port=_socket_port,address=_socket_host)
 	jeedom_com = jeedom_com(apikey = _apikey,url = _callback)
+	if not jeedom_com.test():
+	    logging.error('Network communication issues. Please fixe your Jeedom network configuration.')
+	    shutdown()
+	jeedom_socket = jeedom_socket(port=_socket_port,address=_socket_host)
 	listen()
 except Exception as e:
 	logging.error('Fatal error : '+str(e))
