@@ -1,2 +1,5 @@
 # Plugin Modbus Jeedom
- Modif Julien
+
+Modbus RTU
+Non compatible Wago a l heure actuelle
+

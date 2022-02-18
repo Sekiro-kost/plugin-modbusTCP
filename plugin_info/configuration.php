@@ -37,6 +37,29 @@ if (!isConnect()) {
       <div class="col-md-4">
         <input class="configKey form-control" data-l1key="timerecup" placeholder=""/>
       </div>
+      </div>  
+    <div class="form-group">    
+      <label class="col-md-4 control-label">{{Tentatives Retry si defaut (True ou False)}}
+      </label>
+      <div class="col-md-4">
+        <input class="configKey form-control" data-l1key="retrydefault" placeholder=""/>
+      </div>
+     </div>   
+    <div class="form-group">
+        <label class="col-md-4 control-label">{{Nombre de retry si True}}
+      </label>
+      <div class="col-md-4">
+        <input class="configKey form-control" data-l1key="nbretry" placeholder=""/>
+      </div>
+      </div>  
+    <div class="form-group">    
+      <label class="col-md-4 control-label">{{Timeout entre les tentatives}}
+      </label>
+      <div class="col-md-4">
+        <input class="configKey form-control" data-l1key="timeoutretries" placeholder=""/>
+      </div>
+     </div>   
+        
     </div>
 
   </fieldset>

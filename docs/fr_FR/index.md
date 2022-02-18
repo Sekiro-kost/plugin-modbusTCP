@@ -24,7 +24,10 @@ Rien n’est à modifier dans le champ « Port socket interne » de la section �
 
 ![socket](../images/ModbusConfig.png)
 
-Dans ce même onglet, il vous faut choisir la valeur du repos entre l'actualisation de vos équipements (par defaut 5 sec)
+Dans ce même onglet, il vous faut choisir la valeur du repos entre l'actualisation de vos équipements (par défaut 5 sec)
+
+Vous pouvez aussi choisir de mettre un Retry pour re-executer la requête sur une commande/équipement qui serait en erreur (par défaut False)
+Vous pouvez également choisir le nombre de tentatives et le délai entre ces tentatives.
 
 
 
@@ -48,20 +51,21 @@ Details des parametres :
 
 COMMANDES DE LECTURE :
 
-Pour les entrées Coils :  
-  - Vous ajouter une Nouvelle I/O ModbusTCP, et vous nommez la commande. Vous choisissez une commande de type Info, sous type Binaire ou Numerique.
-  - Choisir la fonction code adequate : dans ce cas, il faut choisir Fc1 read Coils
+Pour les entrées Coils et Discretes Inputs :  
+  - Vous ajouter une Nouvelle Commande Modbus, et vous nommez la commande. Vous choisissez une commande de type Info, sous type Binaire ou Numerique.
+  - Choisir le fonction code correspondant : FC01 ou FC02
   - Il faut choisir ensuite le registre de départ ainsi que le nombre de bytes a lire (le nombre de registres)
-  Quand vous sauvegardez, la commande créé sera supprimé, pour créé autant de commandes Coils que le nombre de bytes précisé.
+  Quand vous sauvegardez, la commande créé sera supprimée, pour créer autant de commandes que le nombre de bytes précisé.
   Ex: Si vous choisissiez un start register à 1 et un nombre de bytes à 4, il sera créé les commandes : ReadCoil_1, ReadCoil_2, ReadCoil_3, ReadCoil_4
-  - Vous pouvez bien sur renommer les ReadCoils à votre convenance.
+  - Vous pouvez bien sur renommer ensuite les ReadCoils/Discretes à votre convenance.
 
 
 
-  Pour les Holdings Registers :
-  - Vous ajouter une Nouvelle I/O ModbusTCP, et vous nommez la commande. Vous choisissez une commande de type Info, sous type Numerique.
-  - Choisir le format correspondant : Float ou Long/Integer
-  - Le Registre de depart ainsi que le nombre de bytes : pour les floats, le maximum de registres encodé est de 4 registres (64 bits)
+  Pour les Holdings Registers et les Inputs Registers:
+  - Vous ajouter une Nouvelle Commande Modbus, et vous nommez la commande. Vous choisissez une commande de type Info, sous type Numerique.
+  - Choisir le format correspondant : Float , Long/Integer ou Bits
+  - Choisir le fonction code correspondant : FC04 ou FC03
+  - Le Registre de depart ainsi que le nombre de bytes : pour les floats, le maximum de registres encodé est de 4 registres.
 
 
 
@@ -115,22 +119,31 @@ IMPORTANT :
 
 
 
+IMPORTANT :
 
 
+Certains automates n'ont pas la fonction fc06
+Vous pouvez créér une commande Action, sous type Message, et choisir fc16
+Dans le dashboard, il faut utiliser cette syntaxe :
+registre de depart ! valeur & nbregistres séparé par un |
+
+Ex: 7-122.4&2|10-22&2
+
+On va ecrire à partir du registre 7, la valeur 122.5 sur 2 registres et egalement a partir du registre 10, la valeur 22, sur 2 registres
 
 
 
 Pour écrire sur un Coil :
 
 Exemple pour le registre 1 On:
-- Vous ajouter une Nouvelle I/O ModbusTCP, et vous nommez la commande. Vous choisissez une commande de type Action, sous type Defaut.
+- Vous ajouter une Nouvelle Commande Modbus, et vous nommez la commande. Vous choisissez une commande de type Action, sous type Defaut.
 - Choisir Fc5 Write Single Coil
 - Registre de depart : 1
 - Nb de bytes : 1
 - Mettre 1 dans valeur a envoyer
 
 Exemple pour le registre 1 Off:
-- Vous ajouter une Nouvelle I/O ModbusTCP, et vous nommez la commande. Vous choisissez une commande de type Action, sous type Defaut.
+- Vous ajouter une Nouvelle Commande Modbus, et vous nommez la commande. Vous choisissez une commande de type Action, sous type Defaut.
 - Choisir Fc5 Write Single Coil
 - Registre de depart : 1
 - Nb de bytes : 1
@@ -144,8 +157,8 @@ En agissant sur ces commandes action sur votre dashboard, vous enverrez donc Tru
 
 Pour écrire sur un Holding Register :
 
-- Vous ajouter une Nouvelle I/O ModbusTCP, et vous nommez la commande. Vous choisissez une commande de type Action, sous type Slider.
-- Choisir Fc5 Write Single Register
-- Choisir le format à envoyer au registre (cela modifiera le type de slider sur votre dashboard, suivant qu'il soit float ou long/integer)
+- Vous ajouter une Nouvelle Commande Modbus, et vous nommez la commande. Vous choisissez une commande de type Action, sous type Slider.
+- Choisir aussi une valeur Min et Max pour ce slider (pensez a prendre une valeur min pour envoyer valeur negative)
+- Choisir Fc6 Write Single Register
+- Choisir le nombre de registre : 1
 - Choisir le pas du slider (pour les décimales, écrire avec un .   ex: 0.2)
-- Choisir aussi une valeur Min et Max pour ce slider

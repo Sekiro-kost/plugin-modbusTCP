@@ -102,6 +102,9 @@ class modbus extends eqLogic
         $cmd .= ' --loglevel ' . log::convertLogLevel(log::getLogLevel(__CLASS__));
         $cmd .= ' --socketport ' . config::byKey('socketport', __CLASS__, '55030');
         $cmd .= ' --timesleep ' . config::byKey('timerecup', __CLASS__, '5');
+        $cmd .= ' --retrydefault ' . config::byKey('retrydefault', __CLASS__, 'False');
+        $cmd .= ' --timeoutretries ' . config::byKey('timeoutretries', __CLASS__, 0);
+        $cmd .= ' --nbretry ' . config::byKey('nbretry', __CLASS__, 0);
         $cmd .= ' --sockethost 127.0.0.1';
         $cmd .= ' --callback ' . network::getNetworkAccess('internal', 'proto:127.0.0.1:port:comp') . '/plugins/modbus/core/php/jeeModbus.php';
         $cmd .= ' --apikey ' . jeedom::getApiKey(__CLASS__);
@@ -174,9 +177,10 @@ class modbus extends eqLogic
             'apikey' => jeedom::getApiKey('modbus') ,
             'action' => 'updateDeviceToGlobals'
         );
+
         foreach ($this->getCmd('info') as $cmd)
-        {         
-          if($cmd->getConfiguration('infobitbinary') == 'yes'){           
+        {
+          if($cmd->getConfiguration('infobitbinary') == 'yes'){
             continue;
           }
             $startInfo = $cmd->getConfiguration('startregister');
@@ -198,13 +202,14 @@ class modbus extends eqLogic
                       'wordorder' => $woInfo ,
                       'byteorder' => $boInfo ,
                       'isnegatif' => $cmd->getConfiguration('isnegatif', 0) ,
-                      'offset' => $offset
+                      'offset' => $offset,
+                      'decimal' => $cmd->getConfiguration('decimalafter',0)
                   );
            }
         }
         $cmdMessage = $this->getCmd('action', 'ecriturebit');
         if (is_object($cmdMessage))
-        {  
+        {
             $start = $cmdMessage->getConfiguration('startregister');
             $wo =  $cmdMessage->getConfiguration('wordorder');
             $bo =  $cmdMessage->getConfiguration('byteorder');
@@ -224,8 +229,8 @@ class modbus extends eqLogic
                 'isnegatif' => $cmdMessage->getConfiguration('isnegatif', 0) ,
                 'offset' => $offset
                  );
-              
-            }   
+
+            }
         }
 
         if ($this->getConfiguration('choicemodbus') == 'tcp')
@@ -393,7 +398,7 @@ class modbus extends eqLogic
     // Fonction exécutée automatiquement après la sauvegarde (création ou mise à jour) de l'équipement
     public function postSave()
     {
- 
+
     }
 
     public function creaCoils()
@@ -478,8 +483,8 @@ class modbus extends eqLogic
                     $cmd->setDisplay(parameters, $arr);
                     $cmd->setTemplate('dashboard', 'button');
                     $cmd->setTemplate('mobile', 'button');
-                    $cmd->setConfiguration('minValue', $cmd->getConfiguration('minValue', 0));
-                    $cmd->setConfiguration('maxValue', $cmd->getConfiguration('maxValue', 100));
+                    /*$cmd->setConfiguration('minValue', $cmd->getConfiguration('minValue', 0));
+                    $cmd->setConfiguration('maxValue', $cmd->getConfiguration('maxValue', 100));*/
                     $cmd->save();
                 }
                 elseif ($cmd->getConfiguration('formatIO') == 'longformat')
@@ -511,115 +516,8 @@ class modbus extends eqLogic
     {
 
     }
-/*
-    public static function sendValues($functioncode, $cmdId, $eqId, $valCmd)
-    {
-        $eqLogic = eqLogic::byId(intval($eqId));
-        try
-        {
-            if (is_object($eqLogic))
-            {
 
-                $typeDevice = $eqLogic->getConfiguration('choicemodbus', 0);
-                $unitID = $eqLogic->getConfiguration('unitID', 0);
-                $ipDevice = $eqLogic->getConfiguration('ipuser', 'modbus');
 
-                $value = (array(
-                    'apikey' => jeedom::getApiKey('modbus') ,
-                    'unitID' => $unitID,
-                    'typeDevice' => $typeDevice,
-                    'ipDevice' => $ipDevice,
-                    'action' => 'writeAction'
-                ));
-                if ($functioncode == 'fc15')
-                {
-                    $arrayMultipleCoils = array_map('intval', $arrayMultipleCoils = str_split($valCmd, 1));
-                    foreach ($arrayMultipleCoils as $val)
-                    {
-                        if ($val != 0 && $val != 1)
-                        {
-                            log::add('modbus', 'info', 'ERREUR DANS VOS DONNEES COILS : N ECRIRE QUE 0 ou 1');
-                            return;
-                        }
-                    }
-                    $nbregister = sizeof($arrayMultipleCoils);
-                } else if($functioncode == 'fc16'){
-                      $arrayMultipleRegisters  = explode(' ', $valCmd);
-                      foreach ($arrayMultipleRegisters as $k => $v) {
-                          list($val, $nbregister)   = explode('&', $v);
-                          $result[$k]['valeur'] = $val;
-                          $result[$k]['nbregister'] = $nbregister;
-                      }
-                       log::add('modbus','debug' ,'result '.json_encode($result));
-
-                      foreach($result as $registerData){
-                                 if(preg_match("/[a-z]/i", $registerData['valeur'])){
-                                log::add('modbus', 'info', 'ERREUR DANS VOS DONNEES REGISTERS : N ECRIRE QUE DES NUMERIQUES');
-                                return;
-                              }
-                       }
-                    $arrayMultipleRegisters = $result;
-                    }
-                else if ($functioncode == 'fc03')
-                {
-                    $nbregister = 1;
-                    $functioncode = 'fc06';
-                }
-                $cmd = cmd::byId(intval($cmdId));
-                if (is_object($cmd))
-                {
-
-                    $offset = $cmd->getConfiguration('offset', 0);
-                    $value['options'] = array(
-                        'nameCmd' => $cmd->getName() ,
-                        'cmdId' => $cmd->getId() ,
-                        'functioncode' => $functioncode,
-                        'nbregister' => $nbregister,
-                        'isnegatif' => intval($cmd->getConfiguration('isnegatif')) ,
-                        'startregister' => intval($cmd->getConfiguration('startregister')) ,
-                        'format' => $cmd->getConfiguration('formatIO') ,
-                        'wordorder' => $cmd->getConfiguration('wordorder') ,
-                        'byteorder' => $cmd->getConfiguration('byteorder') ,
-                        'offset' => $offset,
-                        'value' => $valCmd
-                    );
-                    if ($arrayMultipleCoils)
-                    {
-                        $value['options']['valuesrequest'] = $arrayMultipleCoils;
-                    }
-                    if ($arrayMultipleRegisters)
-                    {
-                        $value['options']['valuesrequest'] = $arrayMultipleRegisters;
-                    }
-
-                }
-
-                $value['deviceInfo'] = array(
-                    'typeDevice' => $eqLogic->getConfiguration('choicemodbus', 0) ,
-                    'portserial' => $eqLogic->getConfiguration('portserial', 0) ,
-                    'baudrate' => intval($eqLogic->getConfiguration('baudrate', 0)) ,
-                    'unitID' => intval($eqLogic->getConfiguration('unitID', 0)) ,
-                    'parity' => $eqLogic->getConfiguration('parity', 0) ,
-                    'stopbits' => intval($eqLogic->getConfiguration('stopbits', 0)) ,
-                    'bytesize' => intval($eqLogic->getConfiguration('bytesize', 0)) ,
-                    'id' => $eqLogic->getId() ,
-                    'ipDevice' => $eqLogic->getConfiguration('ipuser', 'modbus') ,
-                    'registerParams' => $cmdsOptions
-                );
-
-                $value = json_encode($value);
-                modbus::socketConnection($value);
-            }
-
-            return $isOk;
-
-        }
-        catch(Exception $e)
-        {
-            log::add('modbus', 'info', 'Exception reçue : ' . $e->getMessage());
-            return false;
-        }
-    }*/
 
     /*
      * Non obligatoire : permet de modifier l'affichage du widget (également utilisable par les commandes)
@@ -671,7 +569,7 @@ class modbusCmd extends cmd
             return;
         }
 
-		$cmdlogical = $this->getLogicalId();
+	    	$cmdlogical = $this->getLogicalId();
         $eqLogic = $this->getEqLogic();
         $offset = $this->getConfiguration('offset', 0);
         $unitId = intval($eqLogic->getConfiguration('unitID', 0));
@@ -729,13 +627,52 @@ class modbusCmd extends cmd
 
         if ($this->getSubtype() == 'slider')
         {
+               if ($this->getConfiguration('startregister') == ''){
+                   log::add('modbus', 'info', 'Registre de depart non renseigne pour Commande : '.$this->getName());
+               return;
 
-            $value['options']['value'] = $_options['slider'];
+              }
+
+
+    		      	if($this->getConfiguration('formatIO') == 'floatformat'){
+                  $value['options']['value'] = floatval($_options['slider']);
+                }elseif($this->getConfiguration('formatIO') == 'longformat' && $this->getConfiguration('functioncode') != 'fc06'){
+                  $value['options']['value'] = intval($_options['slider']);
+                }
+
 
         }
 
+
+
+      if ($this->getSubtype() == 'message')
+      {
+
+          $isSpecific = $this->getConfiguration('isSpecific');
+          $arrayMultipleRegisters = explode('|', $_options['message']);
+          $i = 0;
+          foreach ($arrayMultipleRegisters as $k => $v)
+          {
+            list($val, $nbregister) = explode('&', $v);
+              $result[$k]['nbregister'] = $nbregister;
+              $arrayB = explode('!', $val);
+              $result[$i]['startregister'] = $arrayB[0];
+              $result[$i]['valeur'] = $arrayB[1];
+              $result[$i]['specificAutomat'] = 'yes';
+              $i++;
+          }
+          $arrayMultipleRegisters = $result;
+          $value['options']['valuesrequest'] = $arrayMultipleRegisters;
+          $value['options']['isSpecific'] = $isSpecific;
+      }
+
         if ($this->getSubtype() == 'other')
         {
+          if ($this->getConfiguration('startregister') == ''){
+                log::add('modbus', 'info', 'Registre de depart non renseigne pour Commande : '.$this->getName());
+           return;
+
+          }
             $toverif = $this->getConfiguration('valeurToAction');
             if (strlen($toverif) == 1 && ($toverif == '0' || $toverif == '1'))
             {
@@ -775,6 +712,7 @@ class modbusCmd extends cmd
 
         if ($cmdlogical == 'ecrituremultiRegisters')
         {
+
             if ($this->getConfiguration('choicefunctioncode', 0) == 'fc16')
             {
                 $arrayMultipleRegisters = explode('|', $_options['message']);

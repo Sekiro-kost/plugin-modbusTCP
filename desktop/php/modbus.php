@@ -1,7 +1,6 @@
 <?php
-if (!isConnect('admin'))
-{
-    throw new Exception('{{401 - Accès non autorisé}}');
+if (!isConnect('admin')) {
+	throw new Exception('{{401 - Accès non autorisé}}');
 }
 // Déclaration des variables obligatoires
 $plugin = plugin::byId('modbus');
@@ -28,34 +27,30 @@ $eqLogics = eqLogic::byType($plugin->getId());
 		</div>
 		<legend><i class="fas fa-table"></i> {{Mes equipements}}</legend>
 		<?php
-if (count($eqLogics) == 0)
-{
-    echo '<br/><div class="text-center" style="font-size:1.2em;font-weight:bold;">{{Aucun équipement Modbus n\'est paramétré, cliquer sur "Ajouter" pour commencer}}</div>';
-}
-else
-{
-    // Champ de recherche
-    echo '<div class="input-group" style="margin:5px;">';
-    echo '<input class="form-control roundedLeft" placeholder="{{Rechercher}}" id="in_searchEqlogic"/>';
-    echo '<div class="input-group-btn">';
-    echo '<a id="bt_resetSearch" class="btn" style="width:30px"><i class="fas fa-times"></i></a>';
-    echo '<a class="btn roundedRight hidden" id="bt_pluginDisplayAsTable" data-coreSupport="1" data-state="0"><i class="fas fa-grip-lines"></i></a>';
-    echo '</div>';
-    echo '</div>';
-    // Liste des équipements du plugin
-    echo '<div class="eqLogicThumbnailContainer">';
-    foreach ($eqLogics as $eqLogic)
-    {
-        $opacity = ($eqLogic->getIsEnable()) ? '' : 'disableCard';
-        echo '<div class="eqLogicDisplayCard cursor ' . $opacity . '" data-eqLogic_id="' . $eqLogic->getId() . '">';
-        echo '<img src="' . $plugin->getPathImgIcon() . '"/>';
-        echo '<br>';
-        echo '<span class="name">' . $eqLogic->getHumanName(true, true) . '</span>';
-        echo '</div>';
-    }
-    echo '</div>';
-}
-?>
+		if (count($eqLogics) == 0) {
+			echo '<br/><div class="text-center" style="font-size:1.2em;font-weight:bold;">{{Aucun équipement Modbus n\'est paramétré, cliquer sur "Ajouter" pour commencer}}</div>';
+		} else {
+			// Champ de recherche
+			echo '<div class="input-group" style="margin:5px;">';
+			echo '<input class="form-control roundedLeft" placeholder="{{Rechercher}}" id="in_searchEqlogic"/>';
+			echo '<div class="input-group-btn">';
+			echo '<a id="bt_resetSearch" class="btn" style="width:30px"><i class="fas fa-times"></i></a>';
+			echo '<a class="btn roundedRight hidden" id="bt_pluginDisplayAsTable" data-coreSupport="1" data-state="0"><i class="fas fa-grip-lines"></i></a>';
+			echo '</div>';
+			echo '</div>';
+			// Liste des équipements du plugin
+			echo '<div class="eqLogicThumbnailContainer">';
+			foreach ($eqLogics as $eqLogic) {
+				$opacity = ($eqLogic->getIsEnable()) ? '' : 'disableCard';
+				echo '<div class="eqLogicDisplayCard cursor '.$opacity.'" data-eqLogic_id="' . $eqLogic->getId() . '">';
+				echo '<img src="' . $plugin->getPathImgIcon() . '"/>';
+				echo '<br>';
+				echo '<span class="name">' . $eqLogic->getHumanName(true, true) . '</span>';
+				echo '</div>';
+			}
+			echo '</div>';
+		}
+		?>
 	</div> <!-- /.eqLogicThumbnailDisplay -->
 
 	<!-- Page de présentation de l'équipement -->
@@ -99,13 +94,12 @@ else
 									<select id="sel_object" class="eqLogicAttr form-control" data-l1key="object_id">
 										<option value="">{{Aucun}}</option>
 										<?php
-$options = '';
-foreach ((jeeObject::buildTree(null, false)) as $object)
-{
-    $options .= '<option value="' . $object->getId() . '">' . str_repeat('&nbsp;&nbsp;', $object->getConfiguration('parentNumber')) . $object->getName() . '</option>';
-}
-echo $options;
-?>
+										$options = '';
+										foreach ((jeeObject::buildTree(null, false)) as $object) {
+											$options .= '<option value="' . $object->getId() . '">' . str_repeat('&nbsp;&nbsp;', $object->getConfiguration('parentNumber')) . $object->getName() . '</option>';
+										}
+										echo $options;
+										?>
 									</select>
 								</div>
 							</div>
@@ -113,13 +107,12 @@ echo $options;
 								<label class="col-sm-3 control-label">{{Catégorie}}</label>
 								<div class="col-sm-7">
 									<?php
-foreach (jeedom::getConfiguration('eqLogic:category') as $key => $value)
-{
-    echo '<label class="checkbox-inline">';
-    echo '<input type="checkbox" class="eqLogicAttr" data-l1key="category" data-l2key="' . $key . '" />' . $value['name'];
-    echo '</label>';
-}
-?>
+									foreach (jeedom::getConfiguration('eqLogic:category') as $key => $value) {
+										echo '<label class="checkbox-inline">';
+										echo '<input type="checkbox" class="eqLogicAttr" data-l1key="category" data-l2key="' . $key . '" />' . $value['name'];
+										echo '</label>';
+									}
+									?>
 								</div>
 							</div>
 							<div class="form-group">
@@ -131,24 +124,24 @@ foreach (jeedom::getConfiguration('eqLogic:category') as $key => $value)
 							</div>
                             <br>
                             <br>
-							<div class="form-group" style="display:flex;">
+							<div class="form-group" style="display:flex;flex-direction:column;justify-content:center;align-content:center;">
 
-                                      <div class="form-group">
-                                          <label class="col-lg-6 control-label" >{{Type Modbus}}</label>
-                                          <div class="col-lg-6">
-                                            <select id="choicemodbus" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="choicemodbus">
-                                                <option value="tcp">{{TCP}}</option>
-                                                <option value="rtu">{{Modbus RTU}}</option>
-                                            </select>
-                                          </div>
-                                      </div>
 
-                                     
+
                                        <div class="col-lg-6" id="div_paramsrtu" style="display:none;">
                                           <form class="form-horizontal">
                                           <fieldset>
                                                <legend><i class="fas fa-wrench"></i>{{Parametres}}</legend>
-                                          </fieldset>
+
+
+																					<div class="form-group" id="choiceMod" >
+																							 <legend>{{Type Modbus}}</legend>
+																							 <select id="choicemodbus" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="choicemodbus">
+																									 <option value="tcp">{{TCP}}</option>
+																									 <option value="rtu">{{Modbus RTU}}</option>
+																							 </select>
+																					 </div>
+
                                               <div class="form-group" id="ipuser" style="display:none;">
                                                    <label class="col-lg-6 control-label" >{{Ip Device}}</label>
                                                    <div class="col-lg-6">
@@ -158,16 +151,14 @@ foreach (jeedom::getConfiguration('eqLogic:category') as $key => $value)
 
 
                                          <div class="form-group" id="div-portserial" style="display:none;">
-                                                    <label class="col-lg-4 control-label">{{Port Série}}</label>
-                                                    <div class="col-lg-4">
+                                                    <label class="col-lg-6 control-label">{{Port Série}}</label>
+                                                    <div class="col-lg-6">
                                                         <select class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="portserial">
-                                                            <option value="auto">{{Auto}}</option>
                                                             <?php
-                                                                  foreach (jeedom::getUsbMapping('', true) as $name => $value)
-                                                                  {
-                                                                      echo '<option value="' . $value . '">' . $name . ' (' . $value . ')</option>';
-                                                                  }
-                                                                  ?>
+                                    							foreach (jeedom::getUsbMapping('', true) as $name => $value) {
+                                       									 echo '<option value="' . $value . '">' . $name . ' (' . $value . ')</option>';
+                                   								 }
+                                 							   ?>
                                                         </select>
                                                     </div>
                                            </div>
@@ -175,8 +166,8 @@ foreach (jeedom::getConfiguration('eqLogic:category') as $key => $value)
 
 
                                           <div class="form-group" id="div-baudrate"  style="display:none;">
-                                               <label class="col-lg-4 control-label">{{Baudrate}}</label>
-                                               <div class="col-lg-4">
+                                               <label class="col-lg-6 control-label">{{Baudrate}}</label>
+                                               <div class="col-lg-6">
                                                       <select id="baudrate" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="baudrate">
                                                           <option value="300">300</option>
                                                           <option value="600">600</option>
@@ -197,8 +188,8 @@ foreach (jeedom::getConfiguration('eqLogic:category') as $key => $value)
                                                </div>
                                           </div>
                                               <div class="form-group" id="div-parity"  style="display:none;">
-                                                  <label class="col-lg-4 control-label">{{Parité}}</label>
-                                                  <div class="col-lg-4">
+                                                  <label class="col-lg-6 control-label">{{Parité}}</label>
+                                                  <div class="col-lg-6">
                                                       <select id="parity" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="parity">
                                                           <option value="N">{{Aucune}}</option>
                                                           <option value="E">{{Paire}}</option>
@@ -207,8 +198,8 @@ foreach (jeedom::getConfiguration('eqLogic:category') as $key => $value)
                                                   </div>
                                               </div>
                                            <div class="form-group" id="div-bytesize"  style="display:none;">
-                                                <label class="col-lg-4 control-label">{{Taille de l octet}}</label>
-                                                <div class="col-lg-4">
+                                                <label class="col-lg-6 control-label">{{Taille de l octet}}</label>
+                                                <div class="col-lg-6">
                                                     <select id="bytesize" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="bytesize">
                                                         <option value="7">{{7 Data Bits}}</option>
                                                         <option value="8">{{8 Data Bits}}</option>
@@ -216,8 +207,8 @@ foreach (jeedom::getConfiguration('eqLogic:category') as $key => $value)
                                                 </div>
                                            </div>
                                              <div class="form-group" id="div-stopbits"  style="display:none;">
-                                                  <label class="col-lg-4 control-label">{{Bit de fin}}</label>
-                                                  <div class="col-lg-4">
+                                                  <label class="col-lg-6 control-label">{{Bit de fin}}</label>
+                                                  <div class="col-lg-6">
                                                       <select id="stopbits" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="stopbits">
                                                           <option value="1">{{1 Stop Bit}}</option>
                                                           <option value="1.5">{{1.5 Stop Bits}}</option>
@@ -225,14 +216,16 @@ foreach (jeedom::getConfiguration('eqLogic:category') as $key => $value)
                                                       </select>
                                                   </div>
                                               </div>
-                                               <div class="form-group" id="div-unitid"  style="display:none;">
-                                                   <label class="col-lg-4 control-label">{{Unit ID}}</label>
-                                                    <div class="col-lg-4">
-                                                       <input type="number" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="unitID"/>
-                                                     </div>
-                                                </div>
+																							<div class="form-group" id="div-unitid"  style="display:none;">
+																									 <label class="col-lg-6 control-label">{{Unit ID}}</label>
+																									 <div class="col-lg-6">
+																										 <input type="number" class="eqLogicAttr form-control" data-l1key="configuration" data-l2key="unitID"/>
+																									 </div>
+																							</div>
+																				</fieldset>
+																			</form>
                                        </div>
-								
+
 				         	</div>
 
 
@@ -244,7 +237,7 @@ foreach (jeedom::getConfiguration('eqLogic:category') as $key => $value)
 							<legend><i class="fas fa-info"></i> {{Informations}}</legend>
 							<div class="form-group">
 								<div class="text-center">
-									<img name="icon_visu" src="<?=$plugin->getPathImgIcon(); ?>" style="max-width:160px;"/>
+									<img name="icon_visu" src="<?= $plugin->getPathImgIcon(); ?>" style="max-width:160px;"/>
 								</div>
 							</div>
 						</div>
@@ -282,6 +275,6 @@ foreach (jeedom::getConfiguration('eqLogic:category') as $key => $value)
 </div><!-- /.row row-overflow -->
 
 <!-- Inclusion du fichier javascript du plugin (dossier, nom_du_fichier, extension_du_fichier, id_du_plugin) -->
-<?php include_file('desktop', 'modbus', 'js', 'modbus'); ?>
+<?php include_file('desktop', 'modbus', 'js', 'modbus');?>
 <!-- Inclusion du fichier javascript du core - NE PAS MODIFIER NI SUPPRIMER -->
-<?php include_file('core', 'plugin.template', 'js'); ?>
+<?php include_file('core', 'plugin.template', 'js');?>

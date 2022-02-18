@@ -51,27 +51,37 @@ if($result['FUNC'] == 'readF'){
             $eqLogicId = $id;
             foreach($data as $nameCmd => $infos){
               foreach($infos as $info){
-                  $cmdId = intval($info['CmdId']);
-                  $value = floatval($info['value']);
-                  $cmdsearch = cmd::byId($cmdId);
-                  if(is_object($cmdsearch)){
-                      log::add('modbus','debug','CMDTOEVENT >>>>>>> ' .$cmdsearch->getName());
-                      log::add('modbus','debug','VALUETOEVENT >>>>>>> ' .$value);
-                      if($cmdsearch->getSubType() != 'message'){
-                         $cmdsearch->event($value);
-                      }                     
-                      if($cmdsearch->getLogicalId() == 'ecriturebit'){ 
-                          $cmdToEv = cmd::byEqLogicIdAndLogicalId($eqLogicId, 'infobitbinary');
-                          if(is_object($cmdToEv)){
-                             $reg = $cmdsearch->getConfiguration('startregister');
-                             $cmdToEv->event(decbin($value));                            
-                             $cmdToEv->setName(__('READ_HOLDING_'.$reg, __FILE__));
-                             $cmdToEv->save();
-                           /*  message::add('modbus','LECTURE BINAIRE EFFECTUEE, VOUS POUVEZ ECRIRE VOS VALEURS', 'ev', 'eventbinary');
-                             message::removeAll(__CLASS__, 'eventbinary');*/
-                            
+                 $cmdId = intval($info['CmdId']);
+                 $cmdsearch = cmd::byId($cmdId);
+                 if(is_object($cmdsearch)){
+                        log::add('modbus','debug','FORMAT : '.$cmdsearch->getConfiguration('formatIO'));
+                          log::add('modbus','debug','GERTCO?FIG : '.$cmdsearch->getConfiguration('choicefunctioncode'));
+                           if($cmdsearch->getConfiguration('choicefunctioncode') == 'fc03' && $cmdsearch->getConfiguration('formatIO') == 'bitsformat'){
+                             log::add('modbus','debug','IFFC03 : ');
+                                 $value = $info['value'];
+                          }else{
+                               $value = floatval($info['value']);
+                               if($cmdsearch->getSubType() != 'message'){
+                                     $cmdsearch->event($value);
+                               }
+                              if($cmdsearch->getLogicalId() == 'ecriturebit'){
+                                $cmdToEv = cmd::byEqLogicIdAndLogicalId($eqLogicId, 'infobitbinary');
+                                if(is_object($cmdToEv)){
+                                   $reg = $cmdsearch->getConfiguration('startregister');
+                                   $cmdToEv->event(decbin($value));
+                                   $cmdToEv->setName(__('READ_HOLDING_'.$reg, __FILE__));
+                                   $cmdToEv->save();
+
+                                }
+                            }
                           }
-                      }
+                          log::add('modbus','debug','CMDTOEVENT >>>>>>> ' .$cmdsearch->getName());
+                          log::add('modbus','debug','VALUETOEVENT >>>>>>> ' .$value);
+                          $cmdsearch->setConfiguration('historizeRound',$cmdsearch->getConfiguration('decimalafter',0));
+                          $cmdsearch->event($value);
+                          $cmdsearch->save();
+
+
                  }
                }
             }

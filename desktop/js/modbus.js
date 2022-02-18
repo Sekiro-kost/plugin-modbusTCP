@@ -63,9 +63,7 @@ $("#table_cmd tbody").delegate(".cmdAttr[data-l2key=defCmd]", 'change', function
 $("#table_cmd tbody").delegate(".cmdAttr[data-l1key=type]", 'change', function (event) {
    $(this).closest('tr').find('.choicefunctioncode').val('');
    $(this).closest('tr').find('.sendValues').hide();
-
    var cmdType = $(this).value();
-
 
    if (cmdType == 'info') {
      $(this).closest('tr').find('.readOption').show();
@@ -77,10 +75,6 @@ $("#table_cmd tbody").delegate(".cmdAttr[data-l1key=type]", 'change', function (
      $(this).closest('tr').find('.valeurToAction').show();
      $(this).closest('tr').find('.request').show();
    }
-
-  //var testing = $(this).closest('tr').find('.defCmd').value();
-  //console.log(testing);
-
 });
 
 
@@ -88,8 +82,6 @@ $("#table_cmd tbody").delegate(".cmdAttr[data-l1key=subType]", 'change', functio
   var subType = $(this).value();
     if (subType == 'message') {
        $(this).closest('tr').find('.readOption').show();
-
-
     }
   });
 
@@ -135,159 +127,87 @@ $("#table_cmd tbody").delegate(".cmdAttr[data-l1key=configuration][data-l2key=ch
    var fctCode = $(this).value();
 
   if(fctCode == 'fc01'){
-     $(this).closest('tr').find('.wordorder').hide();
-     $(this).closest('tr').find('.byteorder').hide();
-     $(this).closest('tr').find('.isnegatif').hide();
-     $(this).closest('tr').find('.formatIO').hide();
-     $(this).closest('tr').find('.valeurToAction').hide();
-     $(this).closest('tr').find('.stepchoice').hide();
-	   $(this).closest('tr').find('.sendValues').hide();
-     $(this).closest('tr').find('.isVisible').show();
-     $(this).closest('tr').find('.nbbytes').show();
-     $(this).closest('tr').find('.isVisible').prop('checked', true);
+    modify_FC01_02_05_15($(this));
+    $(this).closest('tr').find('.valeurToAction').hide();
+    $(this).closest('tr').find('.nbbytes').show();
+    $(this).closest('tr').find('.sendValues').hide();
+    $(this).closest('tr').find('.isVisible').show();
+      $(this).closest('tr').find('.isSpecific').hide();
+    $(this).closest('tr').find('.isVisible').prop('checked', true);
   }
 
   if(fctCode == 'fc02'){
-     $(this).closest('tr').find('.wordorder').hide();
-     $(this).closest('tr').find('.byteorder').hide();
-     $(this).closest('tr').find('.isnegatif').hide();
-     $(this).closest('tr').find('.formatIO').hide();
-     $(this).closest('tr').find('.valeurToAction').hide();
-     $(this).closest('tr').find('.stepchoice').hide();
-	   $(this).closest('tr').find('.sendValues').hide();
-     $(this).closest('tr').find('.isVisible').show();
-     $(this).closest('tr').find('.nbbytes').show();
-     $(this).closest('tr').find('.isVisible').prop('checked', true);
-  }
-
-  if(fctCode == 'fc03'){
-     $(this).closest('tr').find('.wordorder').show();
-     $(this).closest('tr').find('.byteorder').show();
-     $(this).closest('tr').find('.isnegatif').show();
-     $(this).closest('tr').find('.formatIO').show();
-     $(this).closest('tr').find('.bitsformat').hide();
-     $(this).closest('tr').find('.valeurToAction').hide();
-     $(this).closest('tr').find('.stepchoice').hide();
-	   $(this).closest('tr').find('.sendValues').show();
-     $(this).closest('tr').find('.isVisible').show();
-     $(this).closest('tr').find('.nbbytes').show();
-     $(this).closest('tr').find('.isVisible').prop('checked', true);
-  }
-
-  if(fctCode == 'fc04'){
-     $(this).closest('tr').find('.wordorder').show();
-     $(this).closest('tr').find('.byteorder').show();
-     $(this).closest('tr').find('.isnegatif').show();
-     $(this).closest('tr').find('.formatIO').show();
-     $(this).closest('tr').find('.bitsformat').hide();
-     $(this).closest('tr').find('.valeurToAction').hide();
-     $(this).closest('tr').find('.stepchoice').hide();
-	   $(this).closest('tr').find('.sendValues').hide();
-     $(this).closest('tr').find('.isVisible').show();
-     $(this).closest('tr').find('.nbbytes').show();
-     $(this).closest('tr').find('.isVisible').prop('checked', true);
+    modify_FC01_02_05_15($(this));
+    $(this).closest('tr').find('.valeurToAction').hide();
+    $(this).closest('tr').find('.nbbytes').show();
+    $(this).closest('tr').find('.sendValues').hide();
+    $(this).closest('tr').find('.isVisible').show();
+      $(this).closest('tr').find('.isSpecific').hide();
+    $(this).closest('tr').find('.isVisible').prop('checked', true);
   }
 
   if(fctCode == 'fc05'){
-     $(this).closest('tr').find('.wordorder').hide();
-     $(this).closest('tr').find('.byteorder').hide();
-     $(this).closest('tr').find('.isnegatif').hide();
-     $(this).closest('tr').find('.formatIO').hide();
-     $(this).closest('tr').find('.valeurToAction').show();
-     $(this).closest('tr').find('.stepchoice').hide();
-	   $(this).closest('tr').find('.sendValues').hide();
-     $(this).closest('tr').find('.isVisible').show();
-     $(this).closest('tr').find('.nbbytes').hide();
-     $(this).closest('tr').find('.isVisible').prop('checked', true);
-  }
-
-  if(fctCode == 'fc06'){
-     $(this).closest('tr').find('.wordorder').show();
-     $(this).closest('tr').find('.byteorder').show();
-     $(this).closest('tr').find('.isnegatif').show();
-     $(this).closest('tr').find('.formatIO').show();
-     $(this).closest('tr').find('.bitsformat').hide();
-     $(this).closest('tr').find('.valeurToAction').hide();
-    /* $(this).closest('tr').find('.stepchoice').hide();*/
-	   $(this).closest('tr').find('.sendValues').hide();
-     $(this).closest('tr').find('.isVisible').show();
-     $(this).closest('tr').find('.nbbytes').hide();
-     $(this).closest('tr').find('.isVisible').prop('checked', true);
+    modify_FC01_02_05_15($(this));
+    $(this).closest('tr').find('.valeurToAction').show();
+    $(this).closest('tr').find('.nbbytes').hide();
+    $(this).closest('tr').find('.sendValues').hide();
+    $(this).closest('tr').find('.isVisible').show();
+      $(this).closest('tr').find('.isSpecific').hide();
+    $(this).closest('tr').find('.isVisible').prop('checked', true);
   }
 
   if(fctCode == 'fc15'){
-     $(this).closest('tr').find('.wordorder').hide();
-     $(this).closest('tr').find('.byteorder').hide();
-     $(this).closest('tr').find('.isnegatif').hide();
-     $(this).closest('tr').find('.formatIO').hide();
-     $(this).closest('tr').find('.valeurToAction').hide();
-     $(this).closest('tr').find('.stepchoice').hide();
-     $(this).closest('tr').find('.sendValues').show();
-     $(this).closest('tr').find('.isVisible').hide();
-     $(this).closest('tr').find('.nbbytes').hide();
-     $(this).closest('tr').find('.isVisible').prop('checked', false);
+    modify_FC01_02_05_15($(this));
+    $(this).closest('tr').find('.valeurToAction').hide();
+    $(this).closest('tr').find('.nbbytes').hide();
+    $(this).closest('tr').find('.sendValues').show();
+    $(this).closest('tr').find('.isVisible').hide();
+      $(this).closest('tr').find('.isSpecific').hide();
+    $(this).closest('tr').find('.isVisible').prop('checked', false);
+  }
+
+  if(fctCode == 'fc03'){
+    modify_FC03_04_06_16($(this));
+    $(this).closest('tr').find('.bitsformat').show();
+    $(this).closest('tr').find('.sendValues').show();
+    $(this).closest('tr').find('.stepchoice').hide();
+    $(this).closest('tr').find('.isSpecific').hide();
+    $(this).closest('tr').find('.isVisible').prop('checked',true);
+  }
+
+  if(fctCode == 'fc04'){
+    modify_FC03_04_06_16($(this));
+    $(this).closest('tr').find('.bitsformat').hide();
+    $(this).closest('tr').find('.sendValues').hide();
+    $(this).closest('tr').find('.stepchoice').hide();
+    $(this).closest('tr').find('.isSpecific').hide();
+    $(this).closest('tr').find('.isVisible').prop('checked',true);
+  }
+
+  if(fctCode == 'fc06'){
+    modify_FC03_04_06_16($(this));
+    $(this).closest('tr').find('.bitsformat').hide();
+    $(this).closest('tr').find('.sendValues').hide();
+    $(this).closest('tr').find('.stepchoice').show();
+    $(this).closest('tr').find('.isSpecific').hide();
+    $(this).closest('tr').find('.nbbytes').hide();
+    $(this).closest('tr').find('.bitsformat').hide();
+    $(this).closest('tr').find('.floatformat').hide();
+    $(this).closest('tr').find('.isVisible').prop('checked',true);
   }
 
   if(fctCode == 'fc16'){
-     $(this).closest('tr').find('.wordorder').show();
-     $(this).closest('tr').find('.byteorder').show();
-     $(this).closest('tr').find('.isnegatif').show();
-     $(this).closest('tr').find('.formatIO').hide();
-     $(this).closest('tr').find('.bitsformat').hide();
-     $(this).closest('tr').find('.valeurToAction').hide();
-     $(this).closest('tr').find('.stepchoice').hide();
-     $(this).closest('tr').find('.sendValues').show();
-     $(this).closest('tr').find('.isVisible').show();
-     $(this).closest('tr').find('.nbbytes').hide();
-     $(this).closest('tr').find('.isVisible').prop('checked', false);
+    modify_FC03_04_06_16($(this));
+    $(this).closest('tr').find('.formatIO').hide();
+    $(this).closest('tr').find('.bitsformat').hide();
+    $(this).closest('tr').find('.stepchoice').hide();
+    $(this).closest('tr').find('.sendValues').show();
+    $(this).closest('tr').find('.nbbytes').hide();
+    $(this).closest('tr').find('.isVisible').prop('checked', false);
+    $(this).closest('tr').find('.isSpecific').show();
   }
 
 });
-   /*if(fctCode == 'fc01' || fctCode == 'fc02' || fctCode == 'fc05' || fctCode == 'fc15'){
-     $(this).closest('tr').find('.formatIO').hide();
-     $(this).closest('tr').find('.wordorder').hide();
-     $(this).closest('tr').find('.byteorder').hide();
-     $(this).closest('tr').find('.isnegatif').hide();
-   }else{
-     $(this).closest('tr').find('.formatIO').show();
-     $(this).closest('tr').find('.wordorder').show();
-     $(this).closest('tr').find('.byteorder').show();
-     $(this).closest('tr').find('.isnegatif').show();
-   }
-
-   if(fctCode == 'fc03'){
-     $(this).closest('tr').find('.sendValues').show();
-     $(this).closest('tr').find('.isVisible').show();
-   }
-   if (fctCode == 'fc15') {
-     $(this).closest('tr').find('.sendValues').show();
-     $(this).closest('tr').find('.isVisible').hide();
-     $(this).closest('tr').find('.nbbytes').hide();
-     $(this).closest('tr').find('.isVisible').prop('checked', false);
-   }
-   if(fctCode == 'fc16'){
-     $(this).closest('tr').find('.sendValues').show();
-     $(this).closest('tr').find('.isVisible').hide();
-     $(this).closest('tr').find('.isVisible').prop('checked', false);
-     $(this).closest('tr').find('.formatIO').hide();
-   }
-   if(fctCode != 'fc15'){
-     $(this).closest('tr').find('.isVisible').show();
-     $(this).closest('tr').find('.nbbytes').show();
-     $(this).closest('tr').find('.isVisible').prop('checked', true);
-   }
-   if(fctCode != 'fc16'){
-     $(this).closest('tr').find('.isVisible').show();
-     $(this).closest('tr').find('.isVisible').prop('checked', true);
-     $(this).closest('tr').find('.formatIO').show();
-   }
-   else {
-     $(this).closest('tr').find('.sendValues').hide();
-     $(this).closest('tr').find('.isVisible').show();
-   }
-  */
-
-
 
 
 $("#choicemodbus").on('change', function() {
@@ -325,6 +245,22 @@ $("#choicemodbus").on('change', function() {
        $("#div-unitid").show();
      }
 });
+
+function modify_FC01_02_05_15(thi){
+  thi.closest('tr').find('.wordorder').hide();
+  thi.closest('tr').find('.byteorder').hide();
+  thi.closest('tr').find('.isnegatif').hide();
+  thi.closest('tr').find('.formatIO').hide();
+  thi.closest('tr').find('.stepchoice').hide();
+}
+
+function modify_FC03_04_06_16(thi){
+  thi.closest('tr').find('.wordorder').show();
+  thi.closest('tr').find('.byteorder').show();
+  thi.closest('tr').find('.isnegatif').show();
+  thi.closest('tr').find('.valeurToAction').hide();
+  thi.closest('tr').find('.isVisible').show();
+}
 
 /* Fonction permettant l'affichage des commandes dans l'équipement */
 function addCmdToTable(_cmd) {
@@ -364,7 +300,15 @@ function addCmdToTable(_cmd) {
    tr += '</td>';
    tr += '<td>';
    tr += '<label class="checkbox isnegatif"><input type="checkbox" class="cmdAttr isnegatif" data-l1key="configuration" data-l2key="isnegatif">{{Valeur negative}}</label>';
-   tr += '<label class="checkbox offset"><input type="checkbox" class="cmdAttr offset" data-l1key="configuration" data-l2key="offset">{{Offset}}</label>';
+   tr += '<label class="checkbox isSpecific"  style="display:none;"><input type="checkbox" class="cmdAttr isSpecific" data-l1key="configuration" data-l2key="isSpecific" style="display:none;">{{Fc16 Registres non suivis}}</label>';
+   //tr += '<label class="checkbox offset"><input type="checkbox" class="cmdAttr offset" data-l1key="configuration" data-l2key="offset">{{Offset}}</label>';
+   tr += '<select class="cmdAttr form-control input-sm cmdAction offset" data-l1key="configuration" data-l2key="offset" style="margin-top : 5px;font-weight:bold;">';
+   tr += '<option value="" selected id="offset" disabled>{{Offset}}</option>';
+   tr += '<option value="0" id="noOffset">{{No Offset}}</option>';
+   tr += '<option value="-1" id="offsetMinus">{{Offset -1}}</option>';
+   tr += '<option value="1" id="offsetPlus">{{Offset +1}}</option>';
+   tr += '</select>';
+   tr += '<input class="cmdAttr form-control tooltips input-sm decimalafter" data-l1key="configuration" data-l2key="decimalafter" placeholder="{{Nb Chiffres apres la virgule}}" style="width:100%;"/>';
    tr += '<input class="cmdAttr form-control tooltips input-sm stepchoice" data-l1key="configuration" data-l2key="stepchoice" placeholder="{{Choisir le pas du slider (0.1, 0.5 etc..)}}" style="width:100%;"/>';
    tr += '</td>';
    tr += '<td>';
